@@ -1,0 +1,17 @@
+# .NET
+api/bin/
+api/obj/
+
+# SQLite (lokalna baza)
+*.db
+*.db-shm
+*.db-wal
+
+# Node / Angular
+node_modules/
+web/dist/
+web/.angular/
+
+# IDE
+.vscode/
+.idea/
