@@ -32,36 +32,42 @@ public class MenuController : ControllerBase
     [HttpPost("generate")]
     public async Task<ActionResult<MenuResponse>> Generate([FromBody] OnboardingRequest req)
     {
+        // zakresy People/Dinners/budżetu egzekwuje walidacja [Range] na DTO (400 przed akcją)
         var store = Mapping.ParseStore(req.Store);
-        var dinners = Math.Clamp(req.Dinners, 1, 7);
-        var people = Math.Clamp(req.People, 1, 12);
 
         var pool = await LoadPoolAsync();
-        var chosen = _generator.Generate(pool, store, people, dinners, req.Exclusions ?? Array.Empty<string>(),
+        var chosen = _generator.Generate(pool, store, req.People, req.Dinners, req.Exclusions ?? Array.Empty<string>(),
             minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing);
 
         if (chosen.Count == 0)
             return BadRequest(new { message = "Brak przepisów pasujących do wykluczeń i filtrów makro. Poluzuj filtry." });
 
-        return Ok(BuildResponse(chosen, store, people, req.WeeklyBudget));
+        return Ok(BuildResponse(chosen, store, req.People, req.WeeklyBudget));
     }
 
     [HttpPost("swap")]
     public async Task<ActionResult<MenuResponse>> Swap([FromBody] SwapRequest req)
     {
         var store = Mapping.ParseStore(req.Store);
-        var people = Math.Clamp(req.People, 1, 12);
 
         var pool = await LoadPoolAsync();
         var byId = pool.ToDictionary(r => r.Id);
 
-        var current = req.RecipeIds.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
-        if (req.SwapIndex < 0 || req.SwapIndex >= current.Count)
+        // nie filtrujemy po cichu — brakujące id przesunęłyby SwapIndex na inne danie
+        var current = new List<Recipe>(req.RecipeIds.Length);
+        foreach (var id in req.RecipeIds)
+        {
+            if (!byId.TryGetValue(id, out var recipe))
+                return BadRequest(new { message = "Jadłospis zawiera nieaktualne przepisy — ułóż plan od nowa." });
+            current.Add(recipe);
+        }
+
+        if (req.SwapIndex >= current.Count)
             return BadRequest(new { message = "Nieprawidłowy indeks dania do wymiany." });
 
         // wybierz 1 nowy przepis spoza obecnego zestawu
         var replacement = _generator
-            .Generate(pool, store, people, 1, req.Exclusions ?? Array.Empty<string>(), req.RecipeIds,
+            .Generate(pool, store, req.People, 1, req.Exclusions ?? Array.Empty<string>(), req.RecipeIds,
                 minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing)
             .FirstOrDefault();
 
@@ -69,28 +75,26 @@ public class MenuController : ControllerBase
             return BadRequest(new { message = "Brak innego przepisu do podmiany." });
 
         current[req.SwapIndex] = replacement;
-        return Ok(BuildResponse(current, store, people, req.WeeklyBudget));
+        return Ok(BuildResponse(current, store, req.People, req.WeeklyBudget));
     }
 
     [HttpPost("shopping-list")]
     public async Task<ActionResult<ShoppingListDto>> ShoppingList([FromBody] ShoppingListRequest req)
     {
         var store = Mapping.ParseStore(req.Store);
-        var people = Math.Clamp(req.People, 1, 12);
 
         var pool = await LoadPoolAsync();
         var byId = pool.ToDictionary(r => r.Id);
         var recipes = req.RecipeIds.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
         if (recipes.Count == 0) return BadRequest(new { message = "Pusty jadłospis." });
 
-        return Ok(_shopping.Build(recipes, store, people));
+        return Ok(_shopping.Build(recipes, store, req.People));
     }
 
     /// <summary>Porównuje koszt tego samego jadłospisu w każdej sieci — „gdzie kupić najtaniej".</summary>
     [HttpPost("compare")]
     public async Task<ActionResult<CompareResponse>> Compare([FromBody] CompareRequest req)
     {
-        var people = Math.Clamp(req.People, 1, 12);
         var pool = await LoadPoolAsync();
         var byId = pool.ToDictionary(r => r.Id);
         var recipes = req.RecipeIds.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
@@ -98,7 +102,7 @@ public class MenuController : ControllerBase
 
         var stores = Enum.GetValues<Store>().Select(store =>
         {
-            var list = _shopping.Build(recipes, store, people);
+            var list = _shopping.Build(recipes, store, req.People);
             var promoItems = list.Groups.Sum(g => g.Items.Count(i => i.OnPromo));
             var (kind, note) = StoreInfo(store);
             return new StoreCostDto(
@@ -117,7 +121,7 @@ public class MenuController : ControllerBase
             .ToArray();
 
         return Ok(new CompareResponse(
-            people, ranked,
+            req.People, ranked,
             ranked.First().Store,
             Math.Round(dearest - cheapest, 2)));
     }

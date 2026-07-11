@@ -1,5 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { MenuResponse, OnboardingRequest, StoreName } from './models';
+import { readJson, removeKey, writeJson } from './storage';
 
 /** Klucz w localStorage; podbij wersję przy niekompatybilnej zmianie modeli. */
 const STORAGE_KEY = 'tanitydzien.plan.v1';
@@ -22,7 +23,11 @@ export class PlanStateService {
   readonly hasMenu = computed(() => this.menu() !== null);
 
   constructor() {
-    this.restore();
+    const saved = readJson<PersistedPlan>(STORAGE_KEY);
+    if (saved?.onboarding && saved?.menu?.dishes) {
+      this.onboarding.set(saved.onboarding);
+      this.menu.set(saved.menu);
+    }
   }
 
   set(onboarding: OnboardingRequest, menu: MenuResponse): void {
@@ -49,11 +54,7 @@ export class PlanStateService {
   clear(): void {
     this.onboarding.set(null);
     this.menu.set(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // localStorage niedostępny (np. tryb prywatny) — stan i tak wyczyszczony w pamięci
-    }
+    removeKey(STORAGE_KEY);
   }
 
   recipeIds(): number[] {
@@ -63,25 +64,8 @@ export class PlanStateService {
   private persist(): void {
     const onboarding = this.onboarding();
     const menu = this.menu();
-    if (!onboarding || !menu) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ onboarding, menu } satisfies PersistedPlan));
-    } catch {
-      // brak miejsca / tryb prywatny — aplikacja działa dalej bez persystencji
-    }
-  }
-
-  private restore(): void {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as PersistedPlan;
-      if (saved?.onboarding && saved?.menu?.dishes) {
-        this.onboarding.set(saved.onboarding);
-        this.menu.set(saved.menu);
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
+    if (onboarding && menu) {
+      writeJson(STORAGE_KEY, { onboarding, menu } satisfies PersistedPlan);
     }
   }
 }

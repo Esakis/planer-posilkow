@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { MenuResponse, OnboardingRequest } from './models';
+import { readJson, writeJson } from './storage';
 
 const STORAGE_KEY = 'tanitydzien.history.v1';
 const MAX_ENTRIES = 20;
@@ -39,21 +40,12 @@ export class HistoryService {
   }
 
   private load(): HistoryEntry[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) as HistoryEntry[] : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+    const parsed = readJson<HistoryEntry[]>(STORAGE_KEY);
+    return Array.isArray(parsed) ? parsed : [];
   }
 
   private save(entries: HistoryEntry[]): void {
     this.entries.set(entries);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    } catch {
-      // brak miejsca / tryb prywatny — historia działa tylko w pamięci
-    }
+    writeJson(STORAGE_KEY, entries);
   }
 }

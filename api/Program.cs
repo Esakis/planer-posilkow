@@ -21,8 +21,8 @@ builder.Services.AddControllers()
         {
             var firstError = ctx.ModelState
                 .Where(kv => kv.Value?.Errors.Count > 0)
-                .Select(kv => $"{kv.Key}: {kv.Value!.Errors[0].ErrorMessage}")
-                .FirstOrDefault() ?? "Nieprawidłowe dane wejściowe.";
+                .Select(kv => kv.Value!.Errors[0].ErrorMessage)
+                .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m)) ?? "Nieprawidłowe dane wejściowe.";
             return new BadRequestObjectResult(new { message = firstError });
         };
     });

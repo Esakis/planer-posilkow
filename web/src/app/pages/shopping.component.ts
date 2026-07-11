@@ -2,8 +2,18 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
+import { apiErrorMessage, isNetworkError } from '../core/api-error';
 import { PlanStateService } from '../core/plan-state.service';
+import { readJson, writeJson } from '../core/storage';
 import { ShoppingList } from '../core/models';
+
+/** Ostatnio pobrana lista (jedna — dla bieżącego planu) do użycia offline w sklepie. */
+const CACHE_KEY = 'tanitydzien.shopping.v1';
+
+interface CachedList {
+  planKey: string;
+  list: ShoppingList;
+}
 
 @Component({
   selector: 'app-shopping',
@@ -98,38 +108,26 @@ export class ShoppingComponent {
       this.error.set('Brak jadłospisu — wróć i ułóż plan.');
       return;
     }
-    const cacheKey = this.cacheKey(ob.store, ob.people, ids);
+    const planKey = `${ob.store}:${ob.people}:${[...ids].sort((a, b) => a - b).join(',')}`;
     this.api.shoppingList({ recipeIds: ids, people: ob.people, store: ob.store }).subscribe({
       next: l => {
         this.list.set(l);
         this.loading.set(false);
-        try { localStorage.setItem(cacheKey, JSON.stringify(l)); } catch { /* brak miejsca — trudno */ }
+        writeJson(CACHE_KEY, { planKey, list: l } satisfies CachedList);
       },
       error: err => {
         this.loading.set(false);
-        // offline w sklepie — spróbuj ostatnio pobranej listy dla tego samego planu
-        const cached = this.readCache(cacheKey);
-        if (cached) {
-          this.list.set(cached);
+        // offline w sklepie — spróbuj ostatnio pobranej listy dla tego samego planu;
+        // błędy serwera (4xx/5xx) pokazujemy normalnie, nie maskujemy ich cache'em
+        const cached = isNetworkError(err) ? readJson<CachedList>(CACHE_KEY) : null;
+        if (cached?.planKey === planKey && cached.list) {
+          this.list.set(cached.list);
           this.offline.set(true);
         } else {
-          this.error.set(err?.error?.message ?? 'Nie udało się pobrać listy zakupów.');
+          this.error.set(apiErrorMessage(err, 'Nie udało się pobrać listy zakupów.'));
         }
       }
     });
-  }
-
-  private cacheKey(store: string, people: number, ids: number[]): string {
-    return `tanitydzien.shopping.v1:${store}:${people}:${[...ids].sort((a, b) => a - b).join(',')}`;
-  }
-
-  private readCache(key: string): ShoppingList | null {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) as ShoppingList : null;
-    } catch {
-      return null;
-    }
   }
 
   isChecked(key: string): boolean { return this.checked().has(key); }

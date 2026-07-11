@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../core/api.service';
+import { apiErrorMessage } from '../core/api-error';
 import { HistoryService } from '../core/history.service';
 import { PlanStateService } from '../core/plan-state.service';
 import { OnboardingRequest, StoreName } from '../core/models';
@@ -141,7 +142,7 @@ export class OnboardingComponent {
 
     const req: OnboardingRequest = {
       people: this.people(),
-      weeklyBudget: this.budget() || 0,
+      weeklyBudget: this.budget(),
       store: this.store(),
       exclusions: this.exclusions(),
       dinners: this.dinners(),
@@ -158,8 +159,8 @@ export class OnboardingComponent {
       },
       error: err => {
         this.loading.set(false);
-        this.error.set(err?.error?.message ??
-          'Nie udało się połączyć z API. Sprawdź, czy backend działa na :5080.');
+        this.error.set(apiErrorMessage(err,
+          'Nie udało się połączyć z API. Sprawdź, czy backend działa na :5080.'));
       }
     });
   }

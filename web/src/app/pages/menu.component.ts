@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
+import { apiErrorMessage } from '../core/api-error';
 import { PlanStateService } from '../core/plan-state.service';
 
 @Component({
@@ -132,7 +133,7 @@ export class MenuComponent {
       },
       error: err => {
         this.swapping.set(null);
-        this.error.set(err?.error?.message ?? 'Nie udało się wymienić dania.');
+        this.error.set(apiErrorMessage(err, 'Nie udało się wymienić dania.'));
       }
     });
   }

@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations;
 namespace TaniTydzien.Api.Dtos;
 
 public record OnboardingRequest(
-    [Range(1, 12)] int People,
-    [Range(0, 100_000)] decimal WeeklyBudget,
+    [Range(1, 12, ErrorMessage = "Liczba osób musi być między 1 a 12.")] int People,
+    [Range(0, 100_000, ErrorMessage = "Budżet musi być między 0 a 100 000 zł.")] decimal WeeklyBudget,
     string Store,             // "Biedronka" | "Lidl"
     string[] Exclusions,     // tagi do wykluczenia: "ryby","wieprzowina","mięso"
-    [Range(1, 7)] int Dinners,
+    [Range(1, 7, ErrorMessage = "Liczba obiadów musi być między 1 a 7.")] int Dinners,
     // filtry makro (v1.1) — null = bez limitu
-    [Range(0, 200)] double? MinProteinPerServing = null,
-    [Range(0, 3000)] double? MaxKcalPerServing = null);
+    [Range(0, 200, ErrorMessage = "Min. białka musi być między 0 a 200 g.")] double? MinProteinPerServing = null,
+    [Range(1, 3000, ErrorMessage = "Maks. kcal musi być między 1 a 3000.")] double? MaxKcalPerServing = null);
 
 public record DishDto(
     int Day,
@@ -71,23 +71,23 @@ public record RecipeDetailDto(
     RecipeIngredientDto[] Ingredients);
 
 public record SwapRequest(
-    [Required, MinLength(1)] int[] RecipeIds,
-    [Range(0, int.MaxValue)] int SwapIndex,
-    [Range(1, 12)] int People,
-    [Range(0, 100_000)] decimal WeeklyBudget,
+    [Required, MinLength(1, ErrorMessage = "Jadłospis nie może być pusty.")] int[] RecipeIds,
+    [Range(0, int.MaxValue, ErrorMessage = "Indeks dania nie może być ujemny.")] int SwapIndex,
+    [Range(1, 12, ErrorMessage = "Liczba osób musi być między 1 a 12.")] int People,
+    [Range(0, 100_000, ErrorMessage = "Budżet musi być między 0 a 100 000 zł.")] decimal WeeklyBudget,
     string Store,
     string[] Exclusions,
-    [Range(0, 200)] double? MinProteinPerServing = null,
-    [Range(0, 3000)] double? MaxKcalPerServing = null);
+    [Range(0, 200, ErrorMessage = "Min. białka musi być między 0 a 200 g.")] double? MinProteinPerServing = null,
+    [Range(1, 3000, ErrorMessage = "Maks. kcal musi być między 1 a 3000.")] double? MaxKcalPerServing = null);
 
 public record ShoppingListRequest(
-    [Required, MinLength(1)] int[] RecipeIds,
-    [Range(1, 12)] int People,
+    [Required, MinLength(1, ErrorMessage = "Jadłospis nie może być pusty.")] int[] RecipeIds,
+    [Range(1, 12, ErrorMessage = "Liczba osób musi być między 1 a 12.")] int People,
     string Store);
 
 public record CompareRequest(
-    [Required, MinLength(1)] int[] RecipeIds,
-    [Range(1, 12)] int People);
+    [Required, MinLength(1, ErrorMessage = "Jadłospis nie może być pusty.")] int[] RecipeIds,
+    [Range(1, 12, ErrorMessage = "Liczba osób musi być między 1 a 12.")] int People);
 
 public record StoreCostDto(
     string Store,

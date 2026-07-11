@@ -73,6 +73,6 @@ export class HistoryComponent {
 
   dishNames(e: HistoryEntry): string {
     const names = e.menu.dishes.map(d => d.name);
-    return names.length > 3 ? names.slice(0, 3).join(', ') + '…' : names.join(', ');
+    return names.slice(0, 3).join(', ') + (names.length > 3 ? '…' : '');
   }
 }

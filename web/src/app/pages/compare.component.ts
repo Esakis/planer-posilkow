@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
+import { apiErrorMessage } from '../core/api-error';
 import { PlanStateService } from '../core/plan-state.service';
 import { CompareResponse, StoreCost, StoreName } from '../core/models';
 
@@ -114,7 +115,7 @@ export class CompareComponent {
       next: d => { this.data.set(d); this.loading.set(false); },
       error: err => {
         this.loading.set(false);
-        this.error.set(err?.error?.message ?? 'Nie udało się porównać sklepów.');
+        this.error.set(apiErrorMessage(err, 'Nie udało się porównać sklepów.'));
       }
     });
   }

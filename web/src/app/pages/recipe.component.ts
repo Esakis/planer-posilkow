@@ -1,4 +1,4 @@
-import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Location, DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
@@ -72,7 +72,7 @@ import { RecipeDetail } from '../core/models';
     .cooking h1 { font-size: 28px; }
   `]
 })
-export class RecipeComponent implements OnDestroy {
+export class RecipeComponent {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private location = inject(Location);
@@ -84,12 +84,26 @@ export class RecipeComponent implements OnDestroy {
   cookMode = signal(false);
 
   private wakeLock: WakeLockSentinel | null = null;
+  /** Czy blokada powinna być trzymana — steruje przypisaniem po async request. */
+  private wakeLockWanted = false;
 
   constructor() {
-    // wybudź ekran w trybie gotowania (Wake Lock — best effort)
-    effect(() => {
-      if (this.cookMode()) this.acquireWakeLock();
-      else this.releaseWakeLock();
+    // wybudź ekran w trybie gotowania (Wake Lock — best effort);
+    // przeglądarka zwalnia blokadę przy ukryciu karty, więc odnawiamy ją po powrocie
+    effect(onCleanup => {
+      if (!this.cookMode()) return;
+      this.wakeLockWanted = true;
+      this.acquireWakeLock();
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') this.acquireWakeLock();
+      };
+      document.addEventListener('visibilitychange', onVisible);
+      onCleanup(() => {
+        // wykonuje się przy wyłączeniu trybu gotowania i przy niszczeniu komponentu
+        document.removeEventListener('visibilitychange', onVisible);
+        this.wakeLockWanted = false;
+        this.releaseWakeLock();
+      });
     });
 
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -110,15 +124,18 @@ export class RecipeComponent implements OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.releaseWakeLock();
-  }
-
   private async acquireWakeLock(): Promise<void> {
     try {
-      this.wakeLock = await navigator.wakeLock?.request('screen') ?? null;
+      const lock = await navigator.wakeLock?.request('screen') ?? null;
+      // tryb gotowania mógł zostać wyłączony w trakcie oczekiwania — wtedy zwalniamy od razu
+      if (this.wakeLockWanted) {
+        this.wakeLock?.release().catch(() => {});
+        this.wakeLock = lock;
+      } else {
+        lock?.release().catch(() => {});
+      }
     } catch {
-      this.wakeLock = null; // brak wsparcia / odmowa — tryb gotowania działa dalej
+      // brak wsparcia / odmowa — tryb gotowania działa dalej
     }
   }
 

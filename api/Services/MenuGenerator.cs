@@ -31,8 +31,8 @@ public class MenuGenerator
         var candidates = pool
             .Where(r => !chosenIds.Contains(r.Id))
             .Where(r => !RecipeTags(r).Any(excluded.Contains))
-            .Where(r => minProteinPerServing is not double minP || r.ProteinG >= minP)
-            .Where(r => maxKcalPerServing is not double maxK || maxK <= 0 || r.Kcal <= maxK)
+            .Where(r => minProteinPerServing is null || r.ProteinG >= minProteinPerServing.Value)
+            .Where(r => maxKcalPerServing is null || r.Kcal <= maxKcalPerServing.Value)
             .ToList();
 
         // Składniki „w koszyku" (drogie), które już kupujemy — do premii za współdzielenie.
