@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Location, DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
@@ -72,7 +72,7 @@ import { RecipeDetail } from '../core/models';
     .cooking h1 { font-size: 28px; }
   `]
 })
-export class RecipeComponent {
+export class RecipeComponent implements OnDestroy {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private location = inject(Location);
@@ -83,7 +83,15 @@ export class RecipeComponent {
   error = signal<string | null>(null);
   cookMode = signal(false);
 
+  private wakeLock: WakeLockSentinel | null = null;
+
   constructor() {
+    // wybudź ekran w trybie gotowania (Wake Lock — best effort)
+    effect(() => {
+      if (this.cookMode()) this.acquireWakeLock();
+      else this.releaseWakeLock();
+    });
+
     const id = Number(this.route.snapshot.paramMap.get('id'));
     const people = this.state.onboarding()?.people ?? 4;
 
@@ -100,8 +108,23 @@ export class RecipeComponent {
         this.error.set('Nie udało się wczytać przepisu.');
       }
     });
+  }
 
-    // wybudź ekran w trybie gotowania (Wake Lock — best effort)
+  ngOnDestroy(): void {
+    this.releaseWakeLock();
+  }
+
+  private async acquireWakeLock(): Promise<void> {
+    try {
+      this.wakeLock = await navigator.wakeLock?.request('screen') ?? null;
+    } catch {
+      this.wakeLock = null; // brak wsparcia / odmowa — tryb gotowania działa dalej
+    }
+  }
+
+  private releaseWakeLock(): void {
+    this.wakeLock?.release().catch(() => {});
+    this.wakeLock = null;
   }
 
   back(): void { this.location.back(); }
