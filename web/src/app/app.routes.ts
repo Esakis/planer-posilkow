@@ -26,5 +26,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/recipe.component').then(m => m.RecipeComponent)
   },
+  {
+    path: 'history',
+    loadComponent: () =>
+      import('./pages/history.component').then(m => m.HistoryComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

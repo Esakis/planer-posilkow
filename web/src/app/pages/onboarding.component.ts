@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../core/api.service';
+import { HistoryService } from '../core/history.service';
 import { PlanStateService } from '../core/plan-state.service';
 import { OnboardingRequest, StoreName } from '../core/models';
 
@@ -94,6 +95,7 @@ interface ExclusionOption { tag: string; label: string; }
 export class OnboardingComponent {
   private api = inject(ApiService);
   private state = inject(PlanStateService);
+  private history = inject(HistoryService);
   private router = inject(Router);
 
   readonly stores: StoreName[] = ['Biedronka', 'Lidl', 'Auchan'];
@@ -150,6 +152,7 @@ export class OnboardingComponent {
     this.api.generate(req).subscribe({
       next: menu => {
         this.state.set(req, menu);
+        this.history.add(req, menu);
         this.loading.set(false);
         this.router.navigate(['/menu']);
       },
