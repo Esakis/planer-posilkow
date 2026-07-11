@@ -22,6 +22,9 @@ import { ShoppingList } from '../core/models';
         <div class="notice error">{{ error() }}</div>
         <button class="btn btn-primary" routerLink="/menu">Wróć do jadłospisu</button>
       } @else {
+        @if (offline()) {
+          <div class="notice warn">📴 Brak połączenia — pokazuję ostatnio pobraną listę.</div>
+        }
         @if (list(); as l) {
         <div class="stack">
 
@@ -84,6 +87,7 @@ export class ShoppingComponent {
   list = signal<ShoppingList | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
+  offline = signal(false);
   checked = signal<Set<string>>(new Set());
 
   constructor() {
@@ -94,13 +98,38 @@ export class ShoppingComponent {
       this.error.set('Brak jadłospisu — wróć i ułóż plan.');
       return;
     }
+    const cacheKey = this.cacheKey(ob.store, ob.people, ids);
     this.api.shoppingList({ recipeIds: ids, people: ob.people, store: ob.store }).subscribe({
-      next: l => { this.list.set(l); this.loading.set(false); },
+      next: l => {
+        this.list.set(l);
+        this.loading.set(false);
+        try { localStorage.setItem(cacheKey, JSON.stringify(l)); } catch { /* brak miejsca — trudno */ }
+      },
       error: err => {
         this.loading.set(false);
-        this.error.set(err?.error?.message ?? 'Nie udało się pobrać listy zakupów.');
+        // offline w sklepie — spróbuj ostatnio pobranej listy dla tego samego planu
+        const cached = this.readCache(cacheKey);
+        if (cached) {
+          this.list.set(cached);
+          this.offline.set(true);
+        } else {
+          this.error.set(err?.error?.message ?? 'Nie udało się pobrać listy zakupów.');
+        }
       }
     });
+  }
+
+  private cacheKey(store: string, people: number, ids: number[]): string {
+    return `tanitydzien.shopping.v1:${store}:${people}:${[...ids].sort((a, b) => a - b).join(',')}`;
+  }
+
+  private readCache(key: string): ShoppingList | null {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) as ShoppingList : null;
+    } catch {
+      return null;
+    }
   }
 
   isChecked(key: string): boolean { return this.checked().has(key); }
