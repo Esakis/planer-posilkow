@@ -210,34 +210,47 @@ Gotowy plik `start.bat` leży w katalogu głównym repo (obok tego planu).
 
 ## 10. Status realizacji (dziennik)
 
-> Aktualizowane na bieżąco. Ostatnia aktualizacja: **2026-07-02**.
+> Aktualizowane na bieżąco. Ostatnia aktualizacja: **2026-07-11**.
 
 ### ✅ Zrobione
 
 **Backend — `/api` (ASP.NET Core .NET 8 + EF Core + SQLite)**
-- Model danych (Entities) + `SeedData` z 19 przepisami, ~31 składnikami (makro/100 g, działy sklepu) i promocjami tygodnia.
+- Model danych (Entities) + `SeedData` z **51 przepisami**, ~59 składnikami (makro/100 g, działy sklepu) i promocjami tygodnia.
 - Generator jadłospisu — deterministyczny scoring (`Services/MenuGenerator.cs`): koszt + premia za promocje + współdzielenie drogich składników + różnorodność białka. Bez LLM w locie.
 - Pricing + lista zakupów (`PricingService`, `ShoppingListService`) — agregacja po działach, ceny szacunkowe z promocjami, oszczędności.
-- Endpointy: `POST /api/menu/generate`, `/swap`, `/shopping-list`, `/compare`, `GET /api/recipes`, `/recipes/{id}`.
+- Endpointy: `POST /api/menu/generate`, `/swap`, `/shopping-list`, `/compare`, `/pool-count`, `GET /api/recipes`, `/recipes/{id}`.
 - **3 sieci: Biedronka / Lidl / Auchan** — każdy składnik ma cenę w każdej sieci + własne promocje.
-- **Porównywarka sklepów** (`/api/menu/compare`) — wycenia ten sam jadłospis w każdej sieci, ranking od najtańszego + `maxSaving` (ile zyskasz wybierając dobry sklep).
+- **Porównywarka sklepów** (`/api/menu/compare`) — wycenia ten sam jadłospis w każdej sieci, ranking od najtańszego + `maxSaving`.
+- **Walidacja żądań** — `[Range]`/`[Required]` na DTO z polskimi komunikatami; błędy zawsze w formacie `{ message }`.
+- **Filtry makro (v1.1, sekcja 3a)** — rekord `MacroFilters` (min–max białko/węgle/tłuszcze/kcal), twarde ograniczenie puli przed scoringiem, jawny komunikat konfliktu budżet × makro, licznik `/pool-count`.
+- **Testy jednostkowe** — `api.Tests` (xUnit): 14 testów generatora (scoring, promocje, wykluczenia, filtry makro, determinizm).
 
 **Frontend — `/web` (Angular 19 standalone + signals, własny CSS, mobile-first)**
 - Onboarding (sklep, osoby, obiady, budżet, wykluczenia) → generowanie jadłospisu.
+- **Filtry makro w onboardingu** — presety („Więcej białka", „Mniej węgli", „Lekkie") + 4 zakresy suwaków + licznik na żywo „X przepisów pasuje".
 - Ekran jadłospisu: karty dań, banner oszczędności, ostrzeżenie o budżecie, makro dziennie, wymiana dania.
-- **Ekran porównywarki `/compare`**: ranking 3 sklepów, najtańszy podświetlony, „ile zaoszczędzisz", wybór koszyka → lista zakupów pod wybrany sklep.
-- Lista zakupów (grupy po działach, odhaczanie, suma + oszczędności na promocjach).
-- Widok przepisu (składniki, kroki, tryb gotowania z dużą czcionką).
+- **Ekran porównywarki `/compare`**: ranking 3 sklepów, najtańszy podświetlony, wybór koszyka → lista zakupów pod wybrany sklep.
+- Lista zakupów (grupy po działach, odhaczanie, suma + oszczędności na promocjach) — **z fallbackiem offline** (ostatnia pobrana lista z localStorage przy braku sieci).
+- Widok przepisu (składniki, kroki, tryb gotowania z dużą czcionką) — **Wake Lock**: ekran nie gaśnie w trybie gotowania, odnawiany po powrocie do karty.
+- **PWA** — `@angular/pwa`: manifest (nazwa, kolory), service worker, ikony.
+- **Persystencja stanu** — plan w localStorage (refresh nie gubi jadłospisu); wspólne helpery `core/storage.ts`.
+- **Historia jadłospisów** — `/history` (na urządzeniu, maks. 20 wpisów): przywracanie, usuwanie.
+- **Obsługa błędów** — timeout HTTP 15 s (interceptor), wspólny `apiErrorMessage` (w tym komunikat dla timeoutu).
+
+**Jakość**
+- Przegląd kodu (multi-agent, 2026-07-11) — naprawione m.in.: wyścig Wake Lock, crash przy zablokowanym localStorage, maskowanie błędów serwera przez cache offline, przesunięcie indeksów przy swap z nieaktualnymi id, niespójna semantyka filtra kcal.
 
 ### ⏭️ Następne kroki (kolejność realizacji)
 
-1. **PWA — offline lista zakupów** (`@angular/pwa`: manifest + service worker; lista musi działać w sklepie bez zasięgu). ← następne
-2. **Stripe + paywall** (`Stripe.net`): free = 1 jadłospis na próbę, potem premium. Landing + dashboard „zaoszczędziłeś X zł".
-3. **Filtry makro — suwaki (v1.1)** wg sekcji 3a: min–max białko/węgle/tłuszcze/kcal + presety, wpięte w generator jako twarde ograniczenie puli.
-4. **Worker gazetek** (`/worker`, konsola .NET): pobranie gazetki → LLM vision (Claude) → ekstrakcja pozycji → walidacja → zapis do `promotions`.
-5. Kolejne sieci (Aldi, Kaufland, Dino), spiżarnia, plan Rodzinny (śniadania/kolacje) — wg roadmapy w sekcji 9.
+1. **Stripe + paywall** (`Stripe.net`): free = 1 jadłospis na próbę, potem premium. Landing + dashboard „zaoszczędziłeś X zł". **Bloker:** konto Stripe (klucze API) + decyzja o modelu kont użytkowników (auth). ← następne
+2. **Worker gazetek** (`/worker`, konsola .NET): pobranie gazetki → LLM vision (Claude) → ekstrakcja pozycji → walidacja → zapis do `promotions`. **Bloker:** klucz API Anthropic + wybór źródła gazetek.
+3. Dalsza rozbudowa bazy przepisów (51 → 150–250, wg sekcji 2).
+4. Kolejne sieci (Aldi, Kaufland, Dino), spiżarnia, plan Rodzinny (śniadania/kolacje) — wg roadmapy w sekcji 9.
 
 ### ⚠️ Uwagi techniczne dla kontynuacji
 - **Reseed bazy:** po zmianie danych w `SeedData` usuń `api/tanitydzien.db*` — `EnsureCreated`+`Seed` nie reseedują istniejącej bazy (`Seed` bailuje, gdy `Recipes.Any()`).
 - **Angular control flow:** alias `as` nie działa na `@else if` — zagnieżdżaj `@if (x; as y)` wewnątrz `@else`.
+- **Walidacja na rekordach pozycyjnych C#:** atrybuty (`[Range]` itd.) muszą być na parametrach konstruktora, NIE `[property: ...]` — inaczej MVC rzuca `InvalidOperationException` w runtime.
+- **Testy ręczne API w PowerShell:** body z polskimi znakami wysyłaj jako bajty UTF-8 (`[Text.Encoding]::UTF8.GetBytes(...)` + `charset=utf-8`), inaczej wykluczenia typu „mięso" cicho nie zadziałają.
 - Uruchomienie całości: `start.bat` (porty: API `5080`, web `4200`).
+- Testy: `dotnet test` w `api.Tests/`.
