@@ -5,7 +5,7 @@ namespace TaniTydzien.Api.Data;
 /// <summary>
 /// Wypełnia bazę realistycznymi danymi startowymi (przepisy, składniki, ceny,
 /// promocje z „gazetki"). W produkcji przepisy powstają offline (LLM + redakcja),
-/// tutaj mamy reprezentatywny wycinek ~18 obiadów pod polski budżet.
+/// tutaj mamy reprezentatywny wycinek ~50 obiadów pod polski budżet.
 /// </summary>
 public static class SeedData
 {
@@ -60,6 +60,35 @@ public static class SeedData
             new("Przyprawa curry",                     "Przyprawy", 12,   55,   14,   350,  3.49m,  2.99m,  3.29m, 30),
             new("Papryka słodka mielona",              "Przyprawy", 14,   54,   13,   340,  2.99m,  2.49m,  2.79m, 20),
             new("Bulion warzywny",                     "Przyprawy", 10,   20,   30,   250,  4.99m,  4.49m,  4.79m, 120),
+            new("Majeranek",                           "Przyprawy", 13,   60,   7,    330,  2.49m,  1.99m,  2.19m, 10),
+            new("Udka z kurczaka",                     "Mięso",     17,   0,    12,   200,  9.99m,  9.49m,  8.99m, 1000),
+            new("Filet z mintaja (mrożony)",           "Mięso",     17,   0,    1,    80,   24.99m, 23.99m, 22.99m, 1000),
+            new("Schab wieprzowy",                     "Mięso",     21,   0,    10,   180,  17.99m, 18.49m, 16.99m, 1000),
+            new("Wątróbka drobiowa",                   "Mięso",     19,   1,    5,    125,  8.99m,  8.49m,  7.99m, 500),
+            new("Kapusta biała",                       "Warzywa",   1.3,  6,    0.1,  25,   3.99m,  3.49m,  2.99m, 2000),
+            new("Kapusta kiszona",                     "Warzywa",   1.1,  4,    0.2,  19,   6.99m,  6.49m,  5.99m, 900),
+            new("Kalafior",                            "Warzywa",   2,    5,    0.3,  25,   6.99m,  5.99m,  5.49m, 1000),
+            new("Cukinia",                             "Warzywa",   1.2,  3,    0.3,  17,   6.99m,  5.99m,  5.99m, 1000),
+            new("Pomidory świeże",                     "Warzywa",   0.9,  3.9,  0.2,  18,   7.99m,  6.99m,  6.49m, 1000),
+            new("Por",                                 "Warzywa",   1.5,  14,   0.3,  61,   3.49m,  2.99m,  2.79m, 300),
+            new("Seler korzeniowy",                    "Warzywa",   1.5,  9,    0.3,  42,   4.99m,  4.49m,  3.99m, 500),
+            new("Brokuł",                              "Warzywa",   2.8,  7,    0.4,  34,   5.99m,  4.99m,  4.49m, 500),
+            new("Czosnek",                             "Warzywa",   6,    33,   0.5,  149,  2.99m,  2.49m,  2.29m, 100),
+            new("Natka pietruszki",                    "Warzywa",   3,    6,    0.8,  36,   2.49m,  1.99m,  1.99m, 50),
+            new("Koperek",                             "Warzywa",   3,    7,    0.8,  40,   2.49m,  1.99m,  1.99m, 50),
+            new("Szpinak mrożony",                     "Warzywa",   2.9,  1.4,  0.4,  23,   4.99m,  4.49m,  4.29m, 450),
+            new("Banany",                              "Owoce",     1.1,  23,   0.3,  89,   5.99m,  5.49m,  4.99m, 1000),
+            new("Soczewica czerwona",                  "Produkty sypkie", 24, 60, 1.5, 350, 8.99m,  8.49m,  7.99m, 500),
+            new("Makaron penne",                       "Produkty sypkie", 12, 72, 1.5, 350, 3.99m,  3.69m,  3.49m, 500),
+            new("Kasza jęczmienna",                    "Produkty sypkie", 8,  74, 2,   350, 3.99m,  3.79m,  3.49m, 500),
+            new("Płatki owsiane",                      "Produkty sypkie", 13, 60, 7,   370, 3.49m,  2.99m,  2.89m, 500),
+            new("Ciecierzyca (puszka)",                "Konserwy",  7,    14,   1.3,  105,  4.49m,  3.99m,  3.89m, 400),
+            new("Kukurydza (puszka)",                  "Konserwy",  3,    19,   1.2,  97,   3.99m,  3.49m,  3.39m, 400),
+            new("Groszek (puszka)",                    "Konserwy",  4.5,  10,   0.5,  65,   3.79m,  3.49m,  3.29m, 400),
+            new("Jogurt naturalny",                    "Nabiał",    4,    6,    2,    60,   2.99m,  2.79m,  2.69m, 400),
+            new("Ser mozzarella",                      "Nabiał",    18,   1,    17,   240,  4.99m,  4.49m,  4.39m, 125),
+            new("Masło",                               "Tłuszcze",  0.7,  0.7,  82,   740,  7.99m,  7.49m,  6.99m, 200),
+            new("Sos sojowy",                          "Przyprawy", 8,    8,    0,    60,   5.99m,  5.49m,  4.99m, 150),
         };
 
         var ingByName = new Dictionary<string, Ingredient>();
@@ -97,6 +126,15 @@ public static class SeedData
             new("Olej rzepakowy",                 Store.Auchan,    6.49m,  null),
             new("Pierś z kurczaka",               Store.Auchan,    18.99m, null),
             new("Mleko",                          Store.Auchan,    2.79m,  "przy zakupie 4 szt."),
+            new("Udka z kurczaka",                Store.Biedronka, 6.99m,  null),
+            new("Brokuł",                         Store.Biedronka, 3.49m,  null),
+            new("Jogurt naturalny",               Store.Biedronka, 1.99m,  "przy zakupie 3 szt."),
+            new("Filet z mintaja (mrożony)",      Store.Lidl,      19.99m, null),
+            new("Masło",                          Store.Lidl,      5.99m,  "Lidl Plus"),
+            new("Soczewica czerwona",             Store.Lidl,      6.99m,  null),
+            new("Cukinia",                        Store.Auchan,    3.99m,  null),
+            new("Kapusta kiszona",                Store.Auchan,    4.99m,  null),
+            new("Schab wieprzowy",                Store.Auchan,    13.99m, null),
         };
         foreach (var p in promos)
         {
@@ -181,6 +219,138 @@ public static class SeedData
             new("Kurczak pieczony z ziemniakami", 55, "mięso,drob,lubiane-przez-dzieci",
                 "1. Kurczaka natrzyj olejem i papryką.|2. Ziemniaki i marchew pokrój, wymieszaj z olejem.|3. Piecz wszystko razem 40 min w 200°C.",
                 new[]{("Pierś z kurczaka",160.0),("Ziemniaki",300),("Marchew",60),("Olej rzepakowy",12),("Papryka słodka mielona",3),("Bulion warzywny",3)}),
+
+            new("Udka pieczone z ziemniakami i surówką", 65, "mięso,drob,lubiane-przez-dzieci",
+                "1. Udka natrzyj olejem, papryką i majerankiem.|2. Piecz 50 min w 190°C razem z ziemniakami.|3. Kapustę i marchew zetrzyj, dopraw — podawaj jako surówkę.",
+                new[]{("Udka z kurczaka",250.0),("Ziemniaki",250),("Kapusta biała",80),("Marchew",30),("Olej rzepakowy",10),("Papryka słodka mielona",3),("Majeranek",1)}),
+
+            new("Kurczak w sosie pomidorowym z kaszą", 40, "mięso,drob",
+                "1. Kurczaka pokrój i obsmaż z cebulą.|2. Dodaj pomidory, koncentrat i czosnek, duś 15 min.|3. Podawaj z ugotowaną kaszą jęczmienną.",
+                new[]{("Pierś z kurczaka",130.0),("Kasza jęczmienna",70),("Pomidory krojone (puszka)",120),("Cebula",40),("Czosnek",5),("Koncentrat pomidorowy",10),("Olej rzepakowy",8)}),
+
+            new("Kurczak stir-fry z sosem sojowym", 25, "mięso,drob",
+                "1. Ryż ugotuj.|2. Kurczaka pokrój w paski, smaż na dużym ogniu.|3. Dodaj paprykę, marchew i por, smaż 5 min.|4. Wlej sos sojowy, wymieszaj z ryżem.",
+                new[]{("Pierś z kurczaka",130.0),("Ryż biały",75),("Papryka czerwona",50),("Marchew",40),("Por",30),("Sos sojowy",12),("Olej rzepakowy",10)}),
+
+            new("Ryż z kurczakiem i groszkiem", 30, "mięso,drob,lubiane-przez-dzieci",
+                "1. Ryż ugotuj.|2. Kurczaka pokrój w kostkę, podsmaż z cebulą.|3. Dodaj groszek i kukurydzę, chwilę podgrzej.|4. Wymieszaj z ryżem, dopraw.",
+                new[]{("Pierś z kurczaka",120.0),("Ryż biały",75),("Groszek (puszka)",60),("Kukurydza (puszka)",50),("Cebula",30),("Olej rzepakowy",8),("Bulion warzywny",3)}),
+
+            new("Penne z kurczakiem i brokułem", 30, "mięso,drob",
+                "1. Makaron ugotuj, brokuła sparz we wrzątku.|2. Kurczaka podsmaż z czosnkiem.|3. Dodaj śmietanę i brokuła, zagotuj.|4. Wymieszaj z makaronem, posyp serem.",
+                new[]{("Makaron penne",85.0),("Pierś z kurczaka",110),("Brokuł",90),("Śmietana 18%",35),("Czosnek",4),("Ser żółty gouda",20),("Olej rzepakowy",6)}),
+
+            new("Pulpety drobiowe w sosie koperkowym", 45, "mięso,drob,lubiane-przez-dzieci",
+                "1. Kurczaka zmiel lub drobno posiekaj, wymieszaj z jajkiem i mąką, uformuj pulpety.|2. Gotuj w wodzie z bulionem 15 min.|3. Sos: śmietana z mąką i koperkiem, zagotuj w wywarze.|4. Podawaj z ziemniakami.",
+                new[]{("Pierś z kurczaka",130.0),("Ziemniaki",250),("Jajka",15),("Mąka pszenna",20),("Śmietana 18%",30),("Koperek",6),("Bulion warzywny",5)}),
+
+            new("Wątróbka smażona z cebulą", 25, "mięso,drob",
+                "1. Wątróbkę oprósz mąką.|2. Smaż z cebulą na maśle ok. 6-8 min.|3. Dopraw majerankiem.|4. Podawaj z ziemniakami i ogórkiem kiszonym.",
+                new[]{("Wątróbka drobiowa",140.0),("Ziemniaki",250),("Cebula",60),("Mąka pszenna",10),("Masło",12),("Majeranek",1),("Ogórek kiszony",40)}),
+
+            new("Schab smażony z kapustą zasmażaną", 50, "mięso,wieprzowina",
+                "1. Schab pokrój w plastry, rozbij, oprósz mąką i usmaż.|2. Kapustę poszatkuj, uduś z cebulą i zasmaż z mąką.|3. Podawaj z ziemniakami.",
+                new[]{("Schab wieprzowy",130.0),("Kapusta biała",150),("Ziemniaki",250),("Cebula",30),("Mąka pszenna",15),("Olej rzepakowy",15)}),
+
+            new("Bigos z kiełbasą", 80, "mięso,wieprzowina",
+                "1. Kapustę kiszoną przepłucz, gotuj z liściem i majerankiem 40 min.|2. Kiełbasę i cebulę podsmaż, dodaj do kapusty.|3. Dodaj koncentrat, duś jeszcze 20 min.|4. Podawaj z ziemniakami lub chlebem.",
+                new[]{("Kapusta kiszona",200.0),("Kiełbasa śląska",90),("Cebula",40),("Koncentrat pomidorowy",10),("Olej rzepakowy",6),("Majeranek",1),("Ziemniaki",150)}),
+
+            new("Łazanki z kapustą i kiełbasą", 40, "mięso,wieprzowina",
+                "1. Makaron ugotuj.|2. Kapustę poszatkuj i uduś z cebulą.|3. Kiełbasę podsmaż, połącz wszystko i chwilę razem smaż.",
+                new[]{("Makaron świderki",80.0),("Kapusta biała",150),("Kiełbasa śląska",80),("Cebula",40),("Olej rzepakowy",10)}),
+
+            new("Gołąbki bez zawijania", 50, "mięso,wieprzowina,lubiane-przez-dzieci",
+                "1. Mięso podsmaż z cebulą.|2. Dodaj poszatkowaną kapustę i podduś.|3. Wsyp ryż, wlej pomidory i wodę, duś pod przykryciem 25 min.",
+                new[]{("Mięso mielone wieprzowo-wołowe",110.0),("Kapusta biała",150),("Ryż biały",50),("Pomidory krojone (puszka)",120),("Cebula",40),("Koncentrat pomidorowy",10),("Olej rzepakowy",8)}),
+
+            new("Zapiekanka ziemniaczana z mięsem", 60, "mięso,wieprzowina,lubiane-przez-dzieci",
+                "1. Ziemniaki ugotuj i pokrój w plastry.|2. Mięso podsmaż z cebulą i czosnkiem.|3. Układaj warstwami, zalej śmietaną, posyp serem.|4. Zapiekaj 25 min w 200°C.",
+                new[]{("Ziemniaki",280.0),("Mięso mielone wieprzowo-wołowe",100),("Cebula",30),("Czosnek",4),("Śmietana 18%",40),("Ser żółty gouda",30)}),
+
+            new("Filet z mintaja z ziemniakami", 35, "ryby",
+                "1. Rybę oprósz mąką, dopraw i usmaż na maśle.|2. Ziemniaki ugotuj, posyp koperkiem.|3. Podawaj z surówką z kapusty i marchwi.",
+                new[]{("Filet z mintaja (mrożony)",150.0),("Ziemniaki",250),("Mąka pszenna",12),("Masło",12),("Koperek",5),("Kapusta biała",70),("Marchew",30)}),
+
+            new("Ryba w sosie pomidorowym z ryżem", 35, "ryby",
+                "1. Rybę pokrój w kawałki i podsmaż.|2. Cebulę zeszklij, dodaj pomidory i koncentrat, duś 10 min.|3. Włóż rybę do sosu, duś 5 min.|4. Podawaj z ryżem.",
+                new[]{("Filet z mintaja (mrożony)",140.0),("Ryż biały",70),("Pomidory krojone (puszka)",120),("Cebula",40),("Koncentrat pomidorowy",10),("Olej rzepakowy",8)}),
+
+            new("Sałatka z tuńczykiem, ryżem i kukurydzą", 25, "ryby",
+                "1. Ryż ugotuj i ostudź.|2. Wymieszaj z tuńczykiem, kukurydzą, groszkiem i posiekanym ogórkiem kiszonym.|3. Dopraw jogurtem i pieprzem.",
+                new[]{("Ryż biały",70.0),("Tuńczyk (puszka)",55),("Kukurydza (puszka)",60),("Groszek (puszka)",40),("Ogórek kiszony",40),("Jogurt naturalny",40)}),
+
+            new("Zupa jarzynowa", 40, "wege",
+                "1. Por, marchew, seler i ziemniaki pokrój.|2. Gotuj w wodzie z bulionem 20 min.|3. Dodaj groszek i kalafior, gotuj 10 min.|4. Posyp natką.",
+                new[]{("Ziemniaki",150.0),("Marchew",50),("Por",30),("Seler korzeniowy",30),("Kalafior",80),("Groszek (puszka)",40),("Bulion warzywny",6),("Natka pietruszki",5)}),
+
+            new("Krupnik z kaszą jęczmienną", 45, "wege",
+                "1. Kaszę przepłucz.|2. Gotuj z marchwią, selerem, porem i ziemniakami w wodzie z bulionem 30 min.|3. Dopraw, posyp natką.",
+                new[]{("Kasza jęczmienna",50.0),("Ziemniaki",120),("Marchew",50),("Por",30),("Seler korzeniowy",30),("Bulion warzywny",6),("Natka pietruszki",5)}),
+
+            new("Krem z brokułów", 35, "wege",
+                "1. Brokuła, ziemniaki i cebulę gotuj w wodzie z bulionem 15 min.|2. Zblenduj na krem.|3. Dodaj śmietanę, dopraw.|4. Podawaj z grzankami lub pestkami.",
+                new[]{("Brokuł",180.0),("Ziemniaki",120),("Cebula",30),("Śmietana 18%",25),("Bulion warzywny",5),("Czosnek",3)}),
+
+            new("Zupa z soczewicy", 40, "wege",
+                "1. Cebulę, czosnek i marchew podsmaż.|2. Dodaj soczewicę, pomidory i wodę z bulionem.|3. Gotuj 20 min, dopraw papryką i kuminem/curry.",
+                new[]{("Soczewica czerwona",60.0),("Pomidory krojone (puszka)",100),("Marchew",40),("Cebula",40),("Czosnek",4),("Bulion warzywny",5),("Przyprawa curry",2),("Olej rzepakowy",6)}),
+
+            new("Dhal z soczewicy z ryżem", 35, "wege",
+                "1. Cebulę i czosnek podsmaż z curry.|2. Dodaj soczewicę i pomidory, wlej wodę.|3. Gotuj 20 min do rozpadnięcia soczewicy.|4. Podawaj z ryżem i jogurtem.",
+                new[]{("Soczewica czerwona",70.0),("Ryż biały",60),("Pomidory krojone (puszka)",100),("Cebula",40),("Czosnek",4),("Przyprawa curry",3),("Jogurt naturalny",30),("Olej rzepakowy",6)}),
+
+            new("Curry z ciecierzycy ze szpinakiem", 30, "wege",
+                "1. Cebulę i czosnek podsmaż z curry.|2. Dodaj ciecierzycę i pomidory, duś 10 min.|3. Dodaj szpinak, zagotuj.|4. Podawaj z ryżem.",
+                new[]{("Ciecierzyca (puszka)",150.0),("Szpinak mrożony",80),("Ryż biały",60),("Pomidory krojone (puszka)",100),("Cebula",40),("Czosnek",4),("Przyprawa curry",3),("Olej rzepakowy",8)}),
+
+            new("Kotleciki z ciecierzycy", 35, "wege",
+                "1. Ciecierzycę rozgnieć z jajkiem, mąką i przyprawami.|2. Formuj kotleciki i smaż na oleju.|3. Podawaj z jogurtem czosnkowym i surówką z pomidorów.",
+                new[]{("Ciecierzyca (puszka)",180.0),("Jajka",25),("Mąka pszenna",20),("Cebula",30),("Jogurt naturalny",50),("Czosnek",4),("Pomidory świeże",80),("Olej rzepakowy",12)}),
+
+            new("Gulasz warzywny z soczewicą i kaszą", 45, "wege",
+                "1. Cebulę, paprykę i cukinię podsmaż.|2. Dodaj soczewicę, pomidory i koncentrat, wlej wodę z bulionem.|3. Duś 20 min, dopraw papryką.|4. Podawaj z kaszą.",
+                new[]{("Soczewica czerwona",50.0),("Kasza gryczana",60),("Cukinia",100),("Papryka czerwona",50),("Pomidory krojone (puszka)",100),("Cebula",40),("Koncentrat pomidorowy",10),("Bulion warzywny",4),("Olej rzepakowy",8),("Papryka słodka mielona",2)}),
+
+            new("Leczo wegetariańskie z cukinią", 35, "wege",
+                "1. Cebulę i paprykę podsmaż.|2. Dodaj cukinię i pieczarki, smaż 5 min.|3. Wlej pomidory i koncentrat, dopraw papryką, duś 15 min.|4. Podawaj z kaszą lub pieczywem.",
+                new[]{("Cukinia",150.0),("Papryka czerwona",70),("Pieczarki",80),("Pomidory krojone (puszka)",100),("Cebula",40),("Koncentrat pomidorowy",10),("Olej rzepakowy",8),("Papryka słodka mielona",2),("Kasza gryczana",50)}),
+
+            new("Penne z cukinią i mozzarellą", 25, "wege",
+                "1. Makaron ugotuj.|2. Cukinię i czosnek podsmaż na oliwie.|3. Dodaj pomidory, duś 5 min.|4. Wymieszaj z makaronem, dodaj porwaną mozzarellę.",
+                new[]{("Makaron penne",85.0),("Cukinia",120),("Pomidory krojone (puszka)",80),("Ser mozzarella",40),("Czosnek",4),("Olej rzepakowy",8)}),
+
+            new("Makaron ze szpinakiem i twarogiem", 25, "wege",
+                "1. Makaron ugotuj.|2. Szpinak rozmroź na patelni z czosnkiem.|3. Dodaj śmietanę i twaróg, zagotuj.|4. Wymieszaj z makaronem, dopraw.",
+                new[]{("Makaron świderki",85.0),("Szpinak mrożony",100),("Twaróg półtłusty",60),("Śmietana 18%",25),("Czosnek",5),("Olej rzepakowy",6)}),
+
+            new("Risotto z pieczarkami", 35, "wege",
+                "1. Pieczarki podsmaż na maśle, odłóż.|2. Cebulę zeszklij, dodaj ryż, smaż chwilę.|3. Podlewaj bulionem, mieszając ok. 18 min.|4. Dodaj pieczarki, masło i ser, wymieszaj.",
+                new[]{("Ryż biały",85.0),("Pieczarki",100),("Cebula",40),("Masło",15),("Ser żółty gouda",20),("Bulion warzywny",6)}),
+
+            new("Placki z cukinii", 30, "wege",
+                "1. Cukinię zetrzyj, posól i odciśnij.|2. Wymieszaj z jajkiem, mąką i czosnkiem.|3. Smaż placki z obu stron.|4. Podawaj z jogurtem.",
+                new[]{("Cukinia",250.0),("Mąka pszenna",30),("Jajka",25),("Czosnek",4),("Jogurt naturalny",40),("Olej rzepakowy",15)}),
+
+            new("Omlet z warzywami i serem", 20, "wege",
+                "1. Jajka roztrzep z odrobiną mleka.|2. Paprykę, pomidora i cebulę podsmaż.|3. Zalej jajkami, posyp serem, smaż pod przykryciem do ścięcia.",
+                new[]{("Jajka",110.0),("Papryka czerwona",50),("Pomidory świeże",60),("Cebula",25),("Ser żółty gouda",25),("Mleko",20),("Olej rzepakowy",8)}),
+
+            new("Frittata z ziemniakami i szpinakiem", 35, "wege",
+                "1. Ugotowane ziemniaki pokrój w plastry i podsmaż.|2. Dodaj szpinak i czosnek.|3. Zalej roztrzepanymi jajkami, posyp serem.|4. Dopiecz w piekarniku 10 min w 180°C.",
+                new[]{("Jajka",100.0),("Ziemniaki",180),("Szpinak mrożony",70),("Czosnek",4),("Ser żółty gouda",25),("Olej rzepakowy",10)}),
+
+            new("Naleśniki ze szpinakiem i serem", 35, "wege",
+                "1. Usmaż naleśniki z mąki, mleka i jajek.|2. Szpinak podsmaż z czosnkiem, wymieszaj z twarogiem.|3. Nakładaj farsz, zawijaj i podsmaż lub zapiecz.",
+                new[]{("Mąka pszenna",60.0),("Mleko",120),("Jajka",30),("Szpinak mrożony",80),("Twaróg półtłusty",70),("Czosnek",4),("Olej rzepakowy",10)}),
+
+            new("Racuchy owsiane z bananem", 25, "wege,lubiane-przez-dzieci",
+                "1. Płatki zalej mlekiem i odstaw na 10 min.|2. Dodaj jajko, mąkę i rozgniecionego banana.|3. Smaż małe placki na oleju.|4. Podawaj z jogurtem lub startym jabłkiem.",
+                new[]{("Płatki owsiane",50.0),("Mleko",80),("Jajka",25),("Banany",80),("Mąka pszenna",20),("Cukier",10),("Olej rzepakowy",10)}),
+
+            new("Kalafior zapiekany z serem i ziemniakami", 45, "wege",
+                "1. Kalafiora i ziemniaki ugotuj na półtwardo.|2. Przełóż do naczynia, zalej śmietaną z czosnkiem.|3. Posyp serem i zapiekaj 20 min w 200°C.",
+                new[]{("Kalafior",200.0),("Ziemniaki",200),("Śmietana 18%",40),("Ser żółty gouda",35),("Czosnek",4),("Masło",8)}),
         };
 
         foreach (var r in recipes)
