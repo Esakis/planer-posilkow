@@ -50,7 +50,7 @@ interface ExclusionOption { tag: string; label: string; }
             <span class="hint">— opcjonalnie, ostrzeżemy, gdy plan go przekroczy</span>
           </span>
           <input id="budget" type="number" min="0" step="10" [value]="budget()"
-                 (input)="budget.set(+$any($event.target).value)" placeholder="np. 150" />
+                 (input)="setBudget(+$any($event.target).value)" placeholder="np. 150" />
         </label>
 
         <label class="field">
@@ -95,6 +95,11 @@ export class OnboardingComponent {
 
   loading = signal(false);
   error = signal<string | null>(null);
+
+  setBudget(value: number): void {
+    // ujemne i niesparsowane (NaN) traktujemy jako brak budżetu
+    this.budget.set(Number.isFinite(value) && value > 0 ? value : 0);
+  }
 
   bump(which: 'people' | 'dinners', delta: number): void {
     if (which === 'people') this.people.set(clamp(this.people() + delta, 1, 12));

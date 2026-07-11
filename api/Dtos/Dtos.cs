@@ -1,11 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TaniTydzien.Api.Dtos;
 
 public record OnboardingRequest(
-    int People,
-    decimal WeeklyBudget,
+    [Range(1, 12)] int People,
+    [Range(0, 100_000)] decimal WeeklyBudget,
     string Store,             // "Biedronka" | "Lidl"
     string[] Exclusions,     // tagi do wykluczenia: "ryby","wieprzowina","mięso"
-    int Dinners);
+    [Range(1, 7)] int Dinners);
 
 public record DishDto(
     int Day,
@@ -66,21 +68,21 @@ public record RecipeDetailDto(
     RecipeIngredientDto[] Ingredients);
 
 public record SwapRequest(
-    int[] RecipeIds,
-    int SwapIndex,
-    int People,
-    decimal WeeklyBudget,
+    [Required, MinLength(1)] int[] RecipeIds,
+    [Range(0, int.MaxValue)] int SwapIndex,
+    [Range(1, 12)] int People,
+    [Range(0, 100_000)] decimal WeeklyBudget,
     string Store,
     string[] Exclusions);
 
 public record ShoppingListRequest(
-    int[] RecipeIds,
-    int People,
+    [Required, MinLength(1)] int[] RecipeIds,
+    [Range(1, 12)] int People,
     string Store);
 
 public record CompareRequest(
-    int[] RecipeIds,
-    int People);
+    [Required, MinLength(1)] int[] RecipeIds,
+    [Range(1, 12)] int People);
 
 public record StoreCostDto(
     string Store,

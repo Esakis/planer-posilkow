@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaniTydzien.Api.Data;
 using TaniTydzien.Api.Services;
@@ -12,7 +13,19 @@ builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<MenuGenerator>();
 builder.Services.AddScoped<ShoppingListService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(o =>
+    {
+        // Frontend oczekuje błędów w formacie { message } — spłaszczamy ModelState.
+        o.InvalidModelStateResponseFactory = ctx =>
+        {
+            var firstError = ctx.ModelState
+                .Where(kv => kv.Value?.Errors.Count > 0)
+                .Select(kv => $"{kv.Key}: {kv.Value!.Errors[0].ErrorMessage}")
+                .FirstOrDefault() ?? "Nieprawidłowe dane wejściowe.";
+            return new BadRequestObjectResult(new { message = firstError });
+        };
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
