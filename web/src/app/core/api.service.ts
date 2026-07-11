@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  CompareResponse, MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
+  CompareResponse, MacroFilters, MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
 } from './models';
 
 const API = 'http://localhost:5080/api';
@@ -18,9 +18,13 @@ export class ApiService {
   swap(body: {
     recipeIds: number[]; swapIndex: number; people: number;
     weeklyBudget: number; store: string; exclusions: string[];
-    minProteinPerServing?: number | null; maxKcalPerServing?: number | null;
+    macro?: MacroFilters | null;
   }): Observable<MenuResponse> {
     return this.http.post<MenuResponse>(`${API}/menu/swap`, body);
+  }
+
+  poolCount(body: { exclusions: string[]; macro?: MacroFilters | null }): Observable<{ count: number }> {
+    return this.http.post<{ count: number }>(`${API}/menu/pool-count`, body);
   }
 
   shoppingList(body: {

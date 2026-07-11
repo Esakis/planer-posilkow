@@ -1,3 +1,4 @@
+using TaniTydzien.Api.Dtos;
 using TaniTydzien.Api.Models;
 using TaniTydzien.Api.Services;
 
@@ -61,9 +62,9 @@ public class MenuGeneratorTests
     private List<Recipe> Generate(
         IReadOnlyList<Recipe> pool, int dinners,
         IEnumerable<string>? exclusions = null, IEnumerable<int>? alreadyChosen = null,
-        double? minProtein = null, double? maxKcal = null) =>
+        MacroFilters? macro = null) =>
         _generator.Generate(pool, Store.Biedronka, people: 4, dinners, exclusions ?? Array.Empty<string>(),
-            alreadyChosen, minProtein, maxKcal);
+            alreadyChosen, macro);
 
     // ---------- testy ----------
 
@@ -172,7 +173,7 @@ public class MenuGeneratorTests
             MakeRecipe("malo-bialka", "wege", 10m, proteinG: 10),
             MakeRecipe("duzo-bialka", "drob", 10m, proteinG: 40)
         };
-        var result = Generate(pool, dinners: 2, minProtein: 30);
+        var result = Generate(pool, dinners: 2, macro: new MacroFilters(MinProtein: 30));
         Assert.Equal(new[] { "duzo-bialka" }, result.Select(r => r.Name).ToArray());
     }
 
@@ -184,15 +185,42 @@ public class MenuGeneratorTests
             MakeRecipe("lekki", "wege", 10m, kcal: 400),
             MakeRecipe("ciezki", "wege", 10m, kcal: 800)
         };
-        var result = Generate(pool, dinners: 2, maxKcal: 600);
+        var result = Generate(pool, dinners: 2, macro: new MacroFilters(MaxKcal: 600));
         Assert.Equal(new[] { "lekki" }, result.Select(r => r.Name).ToArray());
+    }
+
+    [Fact]
+    public void Filtr_zakresowy_laczy_wiele_makro_naraz()
+    {
+        var pool = new List<Recipe>
+        {
+            MakeRecipe("pasuje", "wege", 10m, proteinG: 35, kcal: 500),
+            MakeRecipe("za-malo-bialka", "wege", 10m, proteinG: 10, kcal: 500),
+            MakeRecipe("za-ciezki", "wege", 10m, proteinG: 35, kcal: 900)
+        };
+        var result = Generate(pool, dinners: 3,
+            macro: new MacroFilters(MinProtein: 30, MaxProtein: 60, MaxKcal: 600));
+        Assert.Equal(new[] { "pasuje" }, result.Select(r => r.Name).ToArray());
     }
 
     [Fact]
     public void Zbyt_ostre_filtry_daja_pusta_liste()
     {
         var pool = new List<Recipe> { MakeRecipe("a", "wege", 10m, proteinG: 20) };
-        var result = Generate(pool, dinners: 1, minProtein: 100);
+        var result = Generate(pool, dinners: 1, macro: new MacroFilters(MinProtein: 100));
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FilterPool_liczy_pasujace_przepisy_bez_generowania()
+    {
+        var pool = new List<Recipe>
+        {
+            MakeRecipe("ryba", "ryby", 10m, proteinG: 40),
+            MakeRecipe("kurczak", "drob", 10m, proteinG: 40),
+            MakeRecipe("salatka", "wege", 10m, proteinG: 8)
+        };
+        var count = _generator.FilterPool(pool, new[] { "ryby" }, new MacroFilters(MinProtein: 30)).Count;
+        Assert.Equal(1, count); // kurczak: ryba wykluczona, sałatka poniżej progu białka
     }
 }

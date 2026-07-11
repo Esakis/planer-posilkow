@@ -37,12 +37,21 @@ public class MenuController : ControllerBase
 
         var pool = await LoadPoolAsync();
         var chosen = _generator.Generate(pool, store, req.People, req.Dinners, req.Exclusions ?? Array.Empty<string>(),
-            minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing);
+            macro: req.Macro);
 
         if (chosen.Count == 0)
             return BadRequest(new { message = "Brak przepisów pasujących do wykluczeń i filtrów makro. Poluzuj filtry." });
 
-        return Ok(BuildResponse(chosen, store, req.People, req.WeeklyBudget));
+        return Ok(BuildResponse(chosen, store, req.People, req.WeeklyBudget, hasMacroFilters: req.Macro?.Any == true));
+    }
+
+    /// <summary>Licznik „ile przepisów pasuje" — feedback na żywo pod suwakami makro.</summary>
+    [HttpPost("pool-count")]
+    public async Task<ActionResult<PoolCountResponse>> PoolCount([FromBody] PoolCountRequest req)
+    {
+        var pool = await LoadPoolAsync();
+        var count = _generator.FilterPool(pool, req.Exclusions ?? Array.Empty<string>(), req.Macro).Count;
+        return Ok(new PoolCountResponse(count));
     }
 
     [HttpPost("swap")]
@@ -68,14 +77,14 @@ public class MenuController : ControllerBase
         // wybierz 1 nowy przepis spoza obecnego zestawu
         var replacement = _generator
             .Generate(pool, store, req.People, 1, req.Exclusions ?? Array.Empty<string>(), req.RecipeIds,
-                minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing)
+                macro: req.Macro)
             .FirstOrDefault();
 
         if (replacement is null)
             return BadRequest(new { message = "Brak innego przepisu do podmiany." });
 
         current[req.SwapIndex] = replacement;
-        return Ok(BuildResponse(current, store, req.People, req.WeeklyBudget));
+        return Ok(BuildResponse(current, store, req.People, req.WeeklyBudget, hasMacroFilters: req.Macro?.Any == true));
     }
 
     [HttpPost("shopping-list")]
@@ -133,7 +142,8 @@ public class MenuController : ControllerBase
         _ => ("osiedlowy", "Blisko, dojdziesz pieszo. Gęsta sieć sklepów.")
     };
 
-    private MenuResponse BuildResponse(List<Recipe> chosen, Store store, int people, decimal budget)
+    private MenuResponse BuildResponse(List<Recipe> chosen, Store store, int people, decimal budget,
+        bool hasMacroFilters = false)
     {
         var dishes = chosen
             .Select((r, i) => Mapping.ToDish(r, i + 1, store, people, _pricing))
@@ -151,9 +161,12 @@ public class MenuController : ControllerBase
             Math.Round(dishes.Sum(d => d.Carbs) / n, 1),
             Math.Round(dishes.Sum(d => d.Fat) / n, 1));
 
+        // konflikt budżet × makro komunikujemy jawnie — nigdy nie ignorujemy po cichu żadnego z ustawień
         string? note = overBudget
             ? $"Ten tydzień wychodzi ~{estimated:0.00} zł (budżet: {budget:0.00} zł). " +
-              "Zwiększ budżet albo wymień najdroższe danie."
+              (hasMacroFilters
+                  ? "Zwiększ budżet albo poluzuj filtry makro."
+                  : "Zwiększ budżet albo wymień najdroższe danie.")
             : null;
 
         return new MenuResponse(

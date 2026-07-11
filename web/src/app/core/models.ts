@@ -2,15 +2,25 @@
 
 export type StoreName = 'Biedronka' | 'Lidl' | 'Auchan';
 
+/** Zakresy makro na porcję — null/undefined = bez limitu. */
+export interface MacroFilters {
+  minProtein?: number | null;
+  maxProtein?: number | null;
+  minCarbs?: number | null;
+  maxCarbs?: number | null;
+  minFat?: number | null;
+  maxFat?: number | null;
+  minKcal?: number | null;
+  maxKcal?: number | null;
+}
+
 export interface OnboardingRequest {
   people: number;
   weeklyBudget: number;
   store: StoreName;
   exclusions: string[];
   dinners: number;
-  /** Filtry makro per porcja — null/undefined = bez limitu. */
-  minProteinPerServing?: number | null;
-  maxKcalPerServing?: number | null;
+  macro?: MacroFilters | null;
 }
 
 export interface MacroSummary {

@@ -1,3 +1,4 @@
+using TaniTydzien.Api.Dtos;
 using TaniTydzien.Api.Models;
 
 namespace TaniTydzien.Api.Services;
@@ -15,6 +16,16 @@ public class MenuGenerator
     // Składniki „znaczące" (drogie) — ich współdzielenie realnie obniża rachunek.
     private const decimal SignificantPricePerG = 0.01m;
 
+    /// <summary>Pula przepisów po odsiewie wykluczeń i filtrów makro — wspólna dla generatora i licznika „ile pasuje".</summary>
+    public List<Recipe> FilterPool(IReadOnlyList<Recipe> pool, IEnumerable<string> exclusions, MacroFilters? macro)
+    {
+        var excluded = new HashSet<string>(exclusions.Select(Norm));
+        return pool
+            .Where(r => !RecipeTags(r).Any(excluded.Contains))
+            .Where(r => macro is null || macro.Matches(r))
+            .ToList();
+    }
+
     /// <summary>
     /// Zwraca przepisy w kolejności doboru; pomija te z wykluczonym tagiem, already-selected
     /// oraz niespełniające filtrów makro (per porcja; null = bez limitu).
@@ -22,17 +33,13 @@ public class MenuGenerator
     public List<Recipe> Generate(
         IReadOnlyList<Recipe> pool, Store store, int people, int dinners,
         IEnumerable<string> exclusions, IEnumerable<int>? alreadyChosen = null,
-        double? minProteinPerServing = null, double? maxKcalPerServing = null)
+        MacroFilters? macro = null)
     {
-        var excluded = new HashSet<string>(exclusions.Select(Norm));
         var chosen = new List<Recipe>();
         var chosenIds = new HashSet<int>(alreadyChosen ?? Enumerable.Empty<int>());
 
-        var candidates = pool
+        var candidates = FilterPool(pool, exclusions, macro)
             .Where(r => !chosenIds.Contains(r.Id))
-            .Where(r => !RecipeTags(r).Any(excluded.Contains))
-            .Where(r => minProteinPerServing is null || r.ProteinG >= minProteinPerServing.Value)
-            .Where(r => maxKcalPerServing is null || r.Kcal <= maxKcalPerServing.Value)
             .ToList();
 
         // Składniki „w koszyku" (drogie), które już kupujemy — do premii za współdzielenie.
