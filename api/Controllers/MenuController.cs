@@ -37,10 +37,11 @@ public class MenuController : ControllerBase
         var people = Math.Clamp(req.People, 1, 12);
 
         var pool = await LoadPoolAsync();
-        var chosen = _generator.Generate(pool, store, people, dinners, req.Exclusions ?? Array.Empty<string>());
+        var chosen = _generator.Generate(pool, store, people, dinners, req.Exclusions ?? Array.Empty<string>(),
+            minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing);
 
         if (chosen.Count == 0)
-            return BadRequest(new { message = "Brak przepisów pasujących do wykluczeń. Poluzuj filtry." });
+            return BadRequest(new { message = "Brak przepisów pasujących do wykluczeń i filtrów makro. Poluzuj filtry." });
 
         return Ok(BuildResponse(chosen, store, people, req.WeeklyBudget));
     }
@@ -60,7 +61,8 @@ public class MenuController : ControllerBase
 
         // wybierz 1 nowy przepis spoza obecnego zestawu
         var replacement = _generator
-            .Generate(pool, store, people, 1, req.Exclusions ?? Array.Empty<string>(), req.RecipeIds)
+            .Generate(pool, store, people, 1, req.Exclusions ?? Array.Empty<string>(), req.RecipeIds,
+                minProteinPerServing: req.MinProteinPerServing, maxKcalPerServing: req.MaxKcalPerServing)
             .FirstOrDefault();
 
         if (replacement is null)

@@ -8,6 +8,9 @@ export interface OnboardingRequest {
   store: StoreName;
   exclusions: string[];
   dinners: number;
+  /** Filtry makro per porcja — null/undefined = bez limitu. */
+  minProteinPerServing?: number | null;
+  maxKcalPerServing?: number | null;
 }
 
 export interface MacroSummary {

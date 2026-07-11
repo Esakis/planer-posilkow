@@ -21,6 +21,7 @@ export class ApiService {
   swap(body: {
     recipeIds: number[]; swapIndex: number; people: number;
     weeklyBudget: number; store: string; exclusions: string[];
+    minProteinPerServing?: number | null; maxKcalPerServing?: number | null;
   }): Observable<MenuResponse> {
     return this.http.post<MenuResponse>(`${API}/menu/swap`, body).pipe(timeout(TIMEOUT_MS));
   }

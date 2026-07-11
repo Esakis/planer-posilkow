@@ -7,7 +7,10 @@ public record OnboardingRequest(
     [Range(0, 100_000)] decimal WeeklyBudget,
     string Store,             // "Biedronka" | "Lidl"
     string[] Exclusions,     // tagi do wykluczenia: "ryby","wieprzowina","mięso"
-    [Range(1, 7)] int Dinners);
+    [Range(1, 7)] int Dinners,
+    // filtry makro (v1.1) — null = bez limitu
+    [Range(0, 200)] double? MinProteinPerServing = null,
+    [Range(0, 3000)] double? MaxKcalPerServing = null);
 
 public record DishDto(
     int Day,
@@ -73,7 +76,9 @@ public record SwapRequest(
     [Range(1, 12)] int People,
     [Range(0, 100_000)] decimal WeeklyBudget,
     string Store,
-    string[] Exclusions);
+    string[] Exclusions,
+    [Range(0, 200)] double? MinProteinPerServing = null,
+    [Range(0, 3000)] double? MaxKcalPerServing = null);
 
 public record ShoppingListRequest(
     [Required, MinLength(1)] int[] RecipeIds,

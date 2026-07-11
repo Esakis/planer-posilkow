@@ -64,6 +64,22 @@ interface ExclusionOption { tag: string; label: string; }
             }
           </div>
         </label>
+
+        <label class="field" for="minProtein">
+          <span class="lbl">Min. białka na porcję
+            <span class="hint">— {{ minProtein() > 0 ? minProtein() + ' g' : 'bez limitu' }}</span>
+          </span>
+          <input id="minProtein" type="range" min="0" max="50" step="5"
+                 [value]="minProtein()" (input)="minProtein.set(+$any($event.target).value)" />
+        </label>
+
+        <label class="field" for="maxKcal">
+          <span class="lbl">Maks. kcal na porcję
+            <span class="hint">— {{ maxKcal() > 0 ? maxKcal() + ' kcal' : 'bez limitu' }}</span>
+          </span>
+          <input id="maxKcal" type="range" min="0" max="900" step="50"
+                 [value]="maxKcal()" (input)="maxKcal.set(+$any($event.target).value)" />
+        </label>
       </div>
 
       @if (error()) { <div class="notice error">{{ error() }}</div> }
@@ -92,6 +108,8 @@ export class OnboardingComponent {
   dinners = signal(5);
   budget = signal<number>(150);
   exclusions = signal<string[]>([]);
+  minProtein = signal(0);  // 0 = bez limitu
+  maxKcal = signal(0);     // 0 = bez limitu
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -124,7 +142,9 @@ export class OnboardingComponent {
       weeklyBudget: this.budget() || 0,
       store: this.store(),
       exclusions: this.exclusions(),
-      dinners: this.dinners()
+      dinners: this.dinners(),
+      minProteinPerServing: this.minProtein() > 0 ? this.minProtein() : null,
+      maxKcalPerServing: this.maxKcal() > 0 ? this.maxKcal() : null
     };
 
     this.api.generate(req).subscribe({

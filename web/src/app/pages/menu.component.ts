@@ -122,7 +122,9 @@ export class MenuComponent {
       people: ob.people,
       weeklyBudget: ob.weeklyBudget,
       store: ob.store,
-      exclusions: ob.exclusions
+      exclusions: ob.exclusions,
+      minProteinPerServing: ob.minProteinPerServing ?? null,
+      maxKcalPerServing: ob.maxKcalPerServing ?? null
     }).subscribe({
       next: updated => {
         this.state.updateMenu(updated);

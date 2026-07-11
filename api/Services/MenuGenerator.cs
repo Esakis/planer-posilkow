@@ -15,10 +15,14 @@ public class MenuGenerator
     // Składniki „znaczące" (drogie) — ich współdzielenie realnie obniża rachunek.
     private const decimal SignificantPricePerG = 0.01m;
 
-    /// <summary>Zwraca przepisy w kolejności doboru; pomija te z wykluczonym tagiem oraz already-selected.</summary>
+    /// <summary>
+    /// Zwraca przepisy w kolejności doboru; pomija te z wykluczonym tagiem, already-selected
+    /// oraz niespełniające filtrów makro (per porcja; null = bez limitu).
+    /// </summary>
     public List<Recipe> Generate(
         IReadOnlyList<Recipe> pool, Store store, int people, int dinners,
-        IEnumerable<string> exclusions, IEnumerable<int>? alreadyChosen = null)
+        IEnumerable<string> exclusions, IEnumerable<int>? alreadyChosen = null,
+        double? minProteinPerServing = null, double? maxKcalPerServing = null)
     {
         var excluded = new HashSet<string>(exclusions.Select(Norm));
         var chosen = new List<Recipe>();
@@ -27,6 +31,8 @@ public class MenuGenerator
         var candidates = pool
             .Where(r => !chosenIds.Contains(r.Id))
             .Where(r => !RecipeTags(r).Any(excluded.Contains))
+            .Where(r => minProteinPerServing is not double minP || r.ProteinG >= minP)
+            .Where(r => maxKcalPerServing is not double maxK || maxK <= 0 || r.Kcal <= maxK)
             .ToList();
 
         // Składniki „w koszyku" (drogie), które już kupujemy — do premii za współdzielenie.
