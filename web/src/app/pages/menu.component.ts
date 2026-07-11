@@ -89,7 +89,7 @@ import { PlanStateService } from '../core/plan-state.service';
         <button class="btn btn-ghost btn-block" (click)="goShopping()">
           🛒 Lista zakupów ({{ m.store }})
         </button>
-        <button class="btn btn-ghost btn-block" routerLink="/">Zacznij od nowa</button>
+        <button class="btn btn-ghost btn-block" (click)="startOver()">Zacznij od nowa</button>
       </div>
     } @else {
       <div class="container center stack" style="padding-top:60px">
@@ -137,5 +137,10 @@ export class MenuComponent {
 
   goShopping(): void {
     this.router.navigate(['/shopping']);
+  }
+
+  startOver(): void {
+    this.state.clear();
+    this.router.navigate(['/']);
   }
 }
