@@ -32,7 +32,7 @@ popd
 
 if not exist "%WEB_DIR%\node_modules" (
     echo(
-    echo [install] npm install (web) - brak node_modules...
+    echo [install] npm install ^(web^) - brak node_modules...
     pushd "%WEB_DIR%"
     call npm install
     popd
@@ -42,10 +42,10 @@ if not exist "%WEB_DIR%\node_modules" (
 
 REM ---------- 3. Uruchomienie aplikacji ----------
 echo(
-echo [run] API   -> http://localhost:%API_PORT%
+echo [run] API   -^> http://localhost:%API_PORT%
 start "TaniTydzien API" cmd /k "cd /d "%API_DIR%" && dotnet run --urls http://localhost:%API_PORT%"
 
-echo [run] WEB   -> http://localhost:%WEB_PORT%
+echo [run] WEB   -^> http://localhost:%WEB_PORT%
 start "TaniTydzien WEB" cmd /k "cd /d "%WEB_DIR%" && npm start"
 
 echo(
