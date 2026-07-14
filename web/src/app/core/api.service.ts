@@ -2,11 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  CompareResponse, CreateRecipeRequest, CustomListItem, Ingredient, MacroFilters,
-  MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
+  CompareResponse, CreateIngredientRequest, CreateRecipeRequest, CustomListItem, Ingredient,
+  MacroFilters, MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
 } from './models';
 
-const API = 'http://localhost:5080/api';
+// względny adres — w dev proxy dev-serwera przekazuje /api do API (web/proxy.conf.json),
+// dzięki czemu aplikacja działa też z telefonu w sieci lokalnej (bez CORS i localhost)
+const API = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -44,6 +46,10 @@ export class ApiService {
 
   ingredients(): Observable<Ingredient[]> {
     return this.http.get<Ingredient[]>(`${API}/ingredients`);
+  }
+
+  createIngredient(req: CreateIngredientRequest): Observable<Ingredient> {
+    return this.http.post<Ingredient>(`${API}/ingredients`, req);
   }
 
   createRecipe(req: CreateRecipeRequest): Observable<{ id: number }> {

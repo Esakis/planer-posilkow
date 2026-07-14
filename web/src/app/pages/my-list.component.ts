@@ -5,6 +5,7 @@ import { ApiService } from '../core/api.service';
 import { apiErrorMessage } from '../core/api-error';
 import { readJson, writeJson } from '../core/storage';
 import { CompareResponse, Ingredient, ShoppingList, StoreName } from '../core/models';
+import { AddIngredientFormComponent } from '../shared/add-ingredient-form.component';
 
 const STORAGE_KEY = 'tanitydzien.mylist.v1';
 
@@ -25,7 +26,7 @@ interface MyListItem {
 @Component({
   selector: 'app-my-list',
   standalone: true,
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, AddIngredientFormComponent],
   template: `
     <div class="container stack">
       <div class="row between">
@@ -71,12 +72,21 @@ interface MyListItem {
                 }
               </div>
             } @else {
-              <div class="muted small" style="margin-top:6px">
-                Nie znamy cen tego produktu — na razie porównujemy tylko produkty z naszej bazy.
-              </div>
+              <div class="muted small" style="margin-top:6px">Nie znamy tego produktu.</div>
+              @if (!showAddForm()) {
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px" (click)="openAddForm()">
+                  ➕ Dodaj „{{ search().trim() }}" jako nowy produkt
+                </button>
+              }
             }
           }
         </div>
+
+        @if (showAddForm()) {
+          <app-add-ingredient-form [initialName]="newProductName()"
+                                   (created)="onIngredientCreated($event)"
+                                   (cancelled)="showAddForm.set(false)" />
+        }
       </div>
 
       <button class="btn btn-primary btn-block" [disabled]="items().length === 0 || comparing()"
@@ -189,6 +199,8 @@ export class MyListComponent {
 
   items = signal<MyListItem[]>(readJson<MyListItem[]>(STORAGE_KEY) ?? []);
   search = signal('');
+  showAddForm = signal(false);
+  newProductName = signal('');
 
   comparing = signal(false);
   error = signal<string | null>(null);
@@ -219,6 +231,17 @@ export class MyListComponent {
   addItem(ing: Ingredient): void {
     this.updateItems(rows => [...rows, { id: ing.id, name: ing.name, aisle: ing.aisle, grams: 500 }]);
     this.search.set('');
+  }
+
+  openAddForm(): void {
+    this.newProductName.set(this.search().trim());
+    this.showAddForm.set(true);
+  }
+
+  onIngredientCreated(ing: Ingredient): void {
+    this.ingredients.update(list => [...list, ing].sort((a, b) => a.name.localeCompare(b.name, 'pl')));
+    this.addItem(ing);
+    this.showAddForm.set(false);
   }
 
   removeItem(index: number): void {

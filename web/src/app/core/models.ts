@@ -149,3 +149,20 @@ export interface CustomListItem {
   ingredientId: number;
   grams: number;
 }
+
+export interface IngredientPriceInput {
+  store: StoreName;
+  basePrice: number;
+  packSizeG: number;
+}
+
+/** Nowy produkt użytkownika — cena w co najmniej jednym sklepie. */
+export interface CreateIngredientRequest {
+  name: string;
+  aisle: string;
+  protein100?: number | null;
+  carbs100?: number | null;
+  fat100?: number | null;
+  kcal100?: number | null;
+  prices: IngredientPriceInput[];
+}

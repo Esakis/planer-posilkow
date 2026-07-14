@@ -4,6 +4,7 @@ import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
 import { apiErrorMessage } from '../core/api-error';
 import { Ingredient } from '../core/models';
+import { AddIngredientFormComponent } from '../shared/add-ingredient-form.component';
 
 /** Tagi do wyboru — spójne z wykluczeniami w onboardingu i tagami seedów. */
 const TAG_OPTIONS = ['wege', 'mięso', 'wieprzowina', 'ryby', 'lubiane-przez-dzieci'];
@@ -16,7 +17,7 @@ interface RecipeItemRow {
 @Component({
   selector: 'app-add-recipe',
   standalone: true,
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, AddIngredientFormComponent],
   template: `
     <div class="container stack">
       <div class="row between">
@@ -54,6 +55,15 @@ interface RecipeItemRow {
             @for (t of tagOptions; track t) {
               <span class="chip selectable" [class.on]="hasTag(t)" (click)="toggleTag(t)">{{ t }}</span>
             }
+            @for (t of customTags(); track t) {
+              <span class="chip selectable on" (click)="toggleTag(t)">{{ t }} ✕</span>
+            }
+          </div>
+          <div class="row" style="gap:8px;margin-top:8px">
+            <input type="text" maxlength="30" style="flex:1" placeholder="własny tag, np. na-imprezę"
+                   [value]="newTag()" (input)="newTag.set($any($event.target).value)"
+                   (keydown.enter)="addTag()" />
+            <button class="btn btn-ghost btn-sm" (click)="addTag()">Dodaj tag</button>
           </div>
           <div class="muted small" style="margin-top:4px">
             Oznacz np. „mięso" albo „ryby" — dzięki temu wykluczenia w generatorze zadziałają też na Twój przepis.
@@ -91,12 +101,21 @@ interface RecipeItemRow {
                 }
               </div>
             } @else {
-              <div class="muted small" style="margin-top:6px">
-                Brak takiego składnika w bazie — na razie można używać tylko składników ze znanymi cenami.
-              </div>
+              <div class="muted small" style="margin-top:6px">Brak takiego składnika w bazie.</div>
+              @if (!showAddForm()) {
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px" (click)="openAddForm()">
+                  ➕ Dodaj „{{ search().trim() }}" jako nowy produkt
+                </button>
+              }
             }
           }
         </div>
+
+        @if (showAddForm()) {
+          <app-add-ingredient-form [initialName]="newProductName()"
+                                   (created)="onIngredientCreated($event)"
+                                   (cancelled)="showAddForm.set(false)" />
+        }
       </div>
 
       <div class="card stack">
@@ -146,9 +165,12 @@ export class AddRecipeComponent {
   timeMin = signal(30);
   servings = signal(4);
   tags = signal<Set<string>>(new Set());
+  newTag = signal('');
   stepsText = signal('');
   items = signal<RecipeItemRow[]>([]);
   search = signal('');
+  showAddForm = signal(false);
+  newProductName = signal('');
 
   saving = signal(false);
   error = signal<string | null>(null);
@@ -198,6 +220,26 @@ export class AddRecipeComponent {
       next.has(t) ? next.delete(t) : next.add(t);
       return next;
     });
+  }
+
+  customTags = computed(() => [...this.tags()].filter(t => !TAG_OPTIONS.includes(t)));
+
+  addTag(): void {
+    const t = this.newTag().trim().toLowerCase().replaceAll(',', '');
+    if (t.length === 0) return;
+    this.tags.update(set => new Set(set).add(t));
+    this.newTag.set('');
+  }
+
+  openAddForm(): void {
+    this.newProductName.set(this.search().trim());
+    this.showAddForm.set(true);
+  }
+
+  onIngredientCreated(ing: Ingredient): void {
+    this.ingredients.update(list => [...list, ing].sort((a, b) => a.name.localeCompare(b.name, 'pl')));
+    this.addItem(ing);
+    this.showAddForm.set(false);
   }
 
   addItem(ing: Ingredient): void {

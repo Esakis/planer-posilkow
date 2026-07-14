@@ -48,6 +48,11 @@ start "TaniTydzien API" cmd /k "cd /d "%API_DIR%" && dotnet run --urls http://lo
 echo [run] WEB   -^> http://localhost:%WEB_PORT%
 start "TaniTydzien WEB" cmd /k "cd /d "%WEB_DIR%" && npm start"
 
+REM adres dla telefonu w tej samej sieci Wi-Fi
+set "LAN_IP="
+for /f %%I in ('powershell -NoProfile -Command "(Get-NetIPConfiguration | Where-Object { $null -ne $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up' } | Select-Object -First 1).IPv4Address.IPAddress"') do set "LAN_IP=%%I"
+if defined LAN_IP echo [run] TELEFON -^> http://%LAN_IP%:%WEB_PORT%  ^(to samo Wi-Fi^)
+
 echo(
 echo === Uruchomiono. Zamknij okna API/WEB aby zatrzymac. ===
 echo(

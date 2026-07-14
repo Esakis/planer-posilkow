@@ -165,6 +165,21 @@ public record CreateRecipeRequest(
 
 public record CreateRecipeResponse(int Id);
 
+public record IngredientPriceInput(
+    string Store,
+    [Range(0.01, 10_000, ErrorMessage = "Cena musi być między 0,01 a 10 000 zł.")] decimal BasePrice,
+    [Range(1, 50_000, ErrorMessage = "Gramatura opakowania musi być między 1 a 50 000 g.")] double PackSizeG);
+
+/// <summary>Nowy produkt (składnik) dodany przez użytkownika — z ceną w co najmniej jednym sklepie.</summary>
+public record CreateIngredientRequest(
+    [Required, MinLength(2, ErrorMessage = "Nazwa produktu musi mieć co najmniej 2 znaki."), MaxLength(60, ErrorMessage = "Nazwa produktu może mieć maks. 60 znaków.")] string Name,
+    [Required] string Aisle,
+    [Range(0, 100, ErrorMessage = "Białko na 100 g musi być między 0 a 100.")] double? Protein100,
+    [Range(0, 100, ErrorMessage = "Węgle na 100 g muszą być między 0 a 100.")] double? Carbs100,
+    [Range(0, 100, ErrorMessage = "Tłuszcz na 100 g musi być między 0 a 100.")] double? Fat100,
+    [Range(0, 900, ErrorMessage = "Kcal na 100 g musi być między 0 a 900.")] double? Kcal100,
+    [Required, MinLength(1, ErrorMessage = "Podaj cenę w co najmniej jednym sklepie.")] IngredientPriceInput[] Prices);
+
 public record CustomListItem(
     [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy składnik.")] int IngredientId,
     [Range(1, 50_000, ErrorMessage = "Ilość musi być między 1 a 50 000 g.")] double Grams);
