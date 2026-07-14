@@ -109,9 +109,49 @@ public class MenuController : ControllerBase
         var recipes = req.RecipeIds.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
         if (recipes.Count == 0) return BadRequest(new { message = "Pusty jadłospis." });
 
+        return Ok(BuildCompare(store => _shopping.Build(recipes, store, req.People), req.People));
+    }
+
+    /// <summary>Własna lista zakupów użytkownika wyceniona w wybranym sklepie.</summary>
+    [HttpPost("custom-list")]
+    public async Task<ActionResult<ShoppingListDto>> CustomList([FromBody] CustomListRequest req)
+    {
+        var items = await LoadCustomItemsAsync(req.Items);
+        if (items is null)
+            return BadRequest(new { message = "Lista zawiera nieznany składnik — odśwież stronę i spróbuj ponownie." });
+
+        return Ok(_shopping.Build(items, Mapping.ParseStore(req.Store)));
+    }
+
+    /// <summary>Własna lista zakupów porównana we wszystkich sieciach — „gdzie kupić najtaniej".</summary>
+    [HttpPost("custom-compare")]
+    public async Task<ActionResult<CompareResponse>> CustomCompare([FromBody] CustomCompareRequest req)
+    {
+        var items = await LoadCustomItemsAsync(req.Items);
+        if (items is null)
+            return BadRequest(new { message = "Lista zawiera nieznany składnik — odśwież stronę i spróbuj ponownie." });
+
+        return Ok(BuildCompare(store => _shopping.Build(items, store), people: 1));
+    }
+
+    /// <summary>Ładuje składniki (z cenami) dla pozycji własnej listy; null gdy któryś nie istnieje.</summary>
+    private async Task<List<(Ingredient ing, double grams)>?> LoadCustomItemsAsync(CustomListItem[] reqItems)
+    {
+        var ids = reqItems.Select(i => i.IngredientId).Distinct().ToArray();
+        var byId = await _db.Ingredients
+            .Include(i => i.Products).ThenInclude(p => p.Promotions)
+            .Where(i => ids.Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id);
+
+        if (byId.Count != ids.Length) return null;
+        return reqItems.Select(i => (byId[i.IngredientId], i.Grams)).ToList();
+    }
+
+    private CompareResponse BuildCompare(Func<Store, ShoppingListDto> buildList, int people)
+    {
         var stores = Enum.GetValues<Store>().Select(store =>
         {
-            var list = _shopping.Build(recipes, store, req.People);
+            var list = buildList(store);
             var promoItems = list.Groups.Sum(g => g.Items.Count(i => i.OnPromo));
             var (kind, note) = StoreInfo(store);
             return new StoreCostDto(
@@ -129,10 +169,10 @@ public class MenuController : ControllerBase
             .OrderBy(s => s.Total)
             .ToArray();
 
-        return Ok(new CompareResponse(
-            req.People, ranked,
+        return new CompareResponse(
+            people, ranked,
             ranked.First().Store,
-            Math.Round(dearest - cheapest, 2)));
+            Math.Round(dearest - cheapest, 2));
     }
 
     private static (string kind, string note) StoreInfo(Store store) => store switch

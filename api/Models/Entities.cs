@@ -65,6 +65,8 @@ public class Recipe
     /// <summary>Tagi diety/cech, przecinkami: "wege", "bez-ryb", "lubiane-przez-dzieci"...</summary>
     public string Tags { get; set; } = "";
     public int BaseServings { get; set; } = 4;
+    /// <summary>Przepis dodany przez użytkownika (nie z seedów) — tylko takie można usuwać.</summary>
+    public bool IsCustom { get; set; }
 
     // Makro na porcję — cache wyliczone ze składników.
     public double ProteinG { get; set; }

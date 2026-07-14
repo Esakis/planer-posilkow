@@ -31,5 +31,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/history.component').then(m => m.HistoryComponent)
   },
+  {
+    path: 'add-recipe',
+    loadComponent: () =>
+      import('./pages/add-recipe.component').then(m => m.AddRecipeComponent)
+  },
+  {
+    path: 'my-list',
+    loadComponent: () =>
+      import('./pages/my-list.component').then(m => m.MyListComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

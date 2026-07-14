@@ -61,6 +61,16 @@ import { RecipeDetail } from '../core/models';
             }
           </ol>
         </div>
+
+        @if (isCustom(r)) {
+          @if (deleteError()) {
+            <div class="notice error">{{ deleteError() }}</div>
+          }
+          <button class="btn btn-ghost btn-block" style="color:var(--danger, #c0392b)"
+                  [disabled]="deleting()" (click)="remove(r.id)">
+            {{ deleting() ? 'Usuwam…' : '🗑 Usuń ten przepis' }}
+          </button>
+        }
         }
       }
     </div>
@@ -82,6 +92,8 @@ export class RecipeComponent {
   loading = signal(true);
   error = signal<string | null>(null);
   cookMode = signal(false);
+  deleting = signal(false);
+  deleteError = signal<string | null>(null);
 
   private wakeLock: WakeLockSentinel | null = null;
   /** Czy blokada powinna być trzymana — steruje przypisaniem po async request. */
@@ -145,6 +157,23 @@ export class RecipeComponent {
   }
 
   back(): void { this.location.back(); }
+
+  // własne przepisy rozpoznajemy po tagu nadawanym przez API przy tworzeniu
+  isCustom(r: RecipeDetail): boolean { return r.tags.includes('własny'); }
+
+  remove(id: number): void {
+    if (this.deleting()) return;
+    if (!confirm('Usunąć ten przepis? Tej operacji nie można cofnąć.')) return;
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    this.api.deleteRecipe(id).subscribe({
+      next: () => this.location.back(),
+      error: () => {
+        this.deleting.set(false);
+        this.deleteError.set('Nie udało się usunąć przepisu.');
+      }
+    });
+  }
 
   // kroki w bazie mają prefiks "1. " — usuwamy, bo <ol> numeruje sam
   stripNumber(step: string): string {

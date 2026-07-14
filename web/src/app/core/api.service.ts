@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  CompareResponse, MacroFilters, MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
+  CompareResponse, CreateRecipeRequest, CustomListItem, Ingredient, MacroFilters,
+  MenuResponse, OnboardingRequest, RecipeDetail, ShoppingList
 } from './models';
 
 const API = 'http://localhost:5080/api';
@@ -39,5 +40,25 @@ export class ApiService {
 
   recipe(id: number, people: number): Observable<RecipeDetail> {
     return this.http.get<RecipeDetail>(`${API}/recipes/${id}?people=${people}`);
+  }
+
+  ingredients(): Observable<Ingredient[]> {
+    return this.http.get<Ingredient[]>(`${API}/ingredients`);
+  }
+
+  createRecipe(req: CreateRecipeRequest): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${API}/recipes`, req);
+  }
+
+  deleteRecipe(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/recipes/${id}`);
+  }
+
+  customList(body: { items: CustomListItem[]; store: string }): Observable<ShoppingList> {
+    return this.http.post<ShoppingList>(`${API}/menu/custom-list`, body);
+  }
+
+  customCompare(body: { items: CustomListItem[] }): Observable<CompareResponse> {
+    return this.http.post<CompareResponse>(`${API}/menu/custom-compare`, body);
   }
 }

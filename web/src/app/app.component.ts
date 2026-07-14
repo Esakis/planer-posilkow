@@ -12,6 +12,8 @@ import { RouterOutlet, RouterLink } from '@angular/router';
           <span class="leaf">🥦</span> TaniTydzień
         </a>
         <span class="spacer"></span>
+        <a class="linkbtn" routerLink="/add-recipe">Własny przepis</a>
+        <a class="linkbtn" routerLink="/my-list">Moja lista</a>
         <a class="linkbtn" routerLink="/history">Historia</a>
         <a class="linkbtn" routerLink="/">Nowy plan</a>
       </div>

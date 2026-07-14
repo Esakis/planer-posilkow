@@ -138,3 +138,40 @@ public record CompareResponse(
     StoreCostDto[] Stores,   // posortowane od najtańszego
     string CheapestStore,
     decimal MaxSaving);      // różnica najdroższy − najtańszy
+
+/// <summary>Składnik do wyboru w formularzu przepisu / własnej listy zakupów.</summary>
+public record IngredientDto(
+    int Id,
+    string Name,
+    string Unit,
+    string Aisle,
+    double Protein100,
+    double Carbs100,
+    double Fat100,
+    double Kcal100);
+
+public record CreateRecipeItem(
+    [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy składnik.")] int IngredientId,
+    [Range(1, 20_000, ErrorMessage = "Ilość składnika musi być między 1 a 20 000 g.")] double Grams);
+
+/// <summary>Własny przepis użytkownika. Ilości składników podane łącznie dla całego przepisu (Servings porcji).</summary>
+public record CreateRecipeRequest(
+    [Required, MinLength(3, ErrorMessage = "Nazwa przepisu musi mieć co najmniej 3 znaki."), MaxLength(80, ErrorMessage = "Nazwa przepisu może mieć maks. 80 znaków.")] string Name,
+    [Range(1, 600, ErrorMessage = "Czas przygotowania musi być między 1 a 600 min.")] int TimeMin,
+    [Range(1, 12, ErrorMessage = "Liczba porcji musi być między 1 a 12.")] int Servings,
+    string[] Tags,
+    [Required, MinLength(1, ErrorMessage = "Przepis musi mieć co najmniej 1 krok.")] string[] Steps,
+    [Required, MinLength(1, ErrorMessage = "Przepis musi mieć co najmniej 1 składnik.")] CreateRecipeItem[] Items);
+
+public record CreateRecipeResponse(int Id);
+
+public record CustomListItem(
+    [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy składnik.")] int IngredientId,
+    [Range(1, 50_000, ErrorMessage = "Ilość musi być między 1 a 50 000 g.")] double Grams);
+
+public record CustomListRequest(
+    [Required, MinLength(1, ErrorMessage = "Lista zakupów jest pusta.")] CustomListItem[] Items,
+    string Store);
+
+public record CustomCompareRequest(
+    [Required, MinLength(1, ErrorMessage = "Lista zakupów jest pusta.")] CustomListItem[] Items);

@@ -117,3 +117,35 @@ export interface CompareResponse {
   cheapestStore: StoreName;
   maxSaving: number;
 }
+
+/** Składnik z bazy — do wyszukiwarki w formularzu przepisu i własnej liście. */
+export interface Ingredient {
+  id: number;
+  name: string;
+  unit: string;
+  aisle: string;
+  protein100: number;
+  carbs100: number;
+  fat100: number;
+  kcal100: number;
+}
+
+export interface CreateRecipeItem {
+  ingredientId: number;
+  grams: number;
+}
+
+/** Własny przepis — ilości składników łączne dla całego przepisu (servings porcji). */
+export interface CreateRecipeRequest {
+  name: string;
+  timeMin: number;
+  servings: number;
+  tags: string[];
+  steps: string[];
+  items: CreateRecipeItem[];
+}
+
+export interface CustomListItem {
+  ingredientId: number;
+  grams: number;
+}

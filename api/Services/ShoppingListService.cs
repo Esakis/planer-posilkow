@@ -23,6 +23,26 @@ public class ShoppingListService
                     totals[ri.IngredientId] = (ri.Ingredient, need);
             }
 
+        return BuildFromTotals(totals, store);
+    }
+
+    /// <summary>Lista z własnych pozycji użytkownika — ilości absolutne, bez mnożenia przez liczbę osób.</summary>
+    public ShoppingListDto Build(IEnumerable<(Ingredient ing, double grams)> items, Store store)
+    {
+        var totals = new Dictionary<int, (Ingredient ing, double grams)>();
+        foreach (var (ing, grams) in items)
+        {
+            if (totals.TryGetValue(ing.Id, out var cur))
+                totals[ing.Id] = (cur.ing, cur.grams + grams);
+            else
+                totals[ing.Id] = (ing, grams);
+        }
+
+        return BuildFromTotals(totals, store);
+    }
+
+    private ShoppingListDto BuildFromTotals(Dictionary<int, (Ingredient ing, double grams)> totals, Store store)
+    {
         decimal total = 0m, promoSavings = 0m;
         var groups = new List<AisleGroupDto>();
 
