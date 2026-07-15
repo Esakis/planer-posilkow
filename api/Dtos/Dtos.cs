@@ -75,7 +75,10 @@ public record IngredientLineDto(
     string DisplayQty,
     decimal Cost,
     bool OnPromo,
-    string? PromoNote);
+    string? PromoNote,
+    /// <summary>"verified" (promocja z gazetki) | "user" (cena użytkownika) | "predicted" (szacunek).</summary>
+    string Source = "predicted",
+    int IngredientId = 0);
 
 public record AisleGroupDto(string Aisle, IngredientLineDto[] Items, decimal Subtotal);
 
@@ -95,7 +98,27 @@ public record RecipeDetailDto(
     int Servings,
     MacroSummary MacroPerServing,
     string[] Steps,
-    RecipeIngredientDto[] Ingredients);
+    RecipeIngredientDto[] Ingredients,
+    bool Mine = false,
+    bool Favorite = false,
+    string Category = "Inne");
+
+/// <summary>Kartka przepisu w katalogu — koszt/makro w kontekście sklepu i liczby osób.</summary>
+public record RecipeCardDto(
+    int RecipeId,
+    string Name,
+    int TimeMin,
+    string[] Tags,
+    double Kcal,
+    double Protein,
+    double Carbs,
+    double Fat,
+    decimal Cost,
+    bool HasPromo,
+    bool IsCustom,
+    bool Mine,      // dodany przez zalogowanego użytkownika (można usunąć)
+    bool Favorite,  // serduszko zalogowanego użytkownika
+    string Category = "Inne");
 
 public record SwapRequest(
     [Required, MinLength(1, ErrorMessage = "Jadłospis nie może być pusty.")] int[] RecipeIds,
@@ -131,13 +154,16 @@ public record StoreCostDto(
     decimal PromoSavings,    // ile ścinają promocje
     int PromoItems,          // ile pozycji na promocji
     bool Cheapest,           // najtańszy z porównywanych
-    decimal DiffToCheapest); // o ile drożej niż najtańszy (0 dla najtańszego)
+    decimal DiffToCheapest,  // o ile drożej niż najtańszy (0 dla najtańszego)
+    decimal VerifiedTotal = 0m); // suma pozycji porównywalnych (cena zweryfikowana/użytkownika w każdej sieci)
 
 public record CompareResponse(
     int People,
     StoreCostDto[] Stores,   // posortowane od najtańszego
     string CheapestStore,
-    decimal MaxSaving);      // różnica najdroższy − najtańszy
+    decimal MaxSaving,       // różnica najdroższy − najtańszy (wg zweryfikowanych, gdy są)
+    bool VerifiedComparison = false, // czy różnicę policzono tylko ze zweryfikowanych pozycji
+    int VerifiedItems = 0);          // ile pozycji weszło do porównania
 
 /// <summary>Składnik do wyboru w formularzu przepisu / własnej listy zakupów.</summary>
 public record IngredientDto(
@@ -161,7 +187,8 @@ public record CreateRecipeRequest(
     [Range(1, 12, ErrorMessage = "Liczba porcji musi być między 1 a 12.")] int Servings,
     string[] Tags,
     [Required, MinLength(1, ErrorMessage = "Przepis musi mieć co najmniej 1 krok.")] string[] Steps,
-    [Required, MinLength(1, ErrorMessage = "Przepis musi mieć co najmniej 1 składnik.")] CreateRecipeItem[] Items);
+    [Required, MinLength(1, ErrorMessage = "Przepis musi mieć co najmniej 1 składnik.")] CreateRecipeItem[] Items,
+    string? Category = null);
 
 public record CreateRecipeResponse(int Id);
 
@@ -179,6 +206,11 @@ public record CreateIngredientRequest(
     [Range(0, 100, ErrorMessage = "Tłuszcz na 100 g musi być między 0 a 100.")] double? Fat100,
     [Range(0, 900, ErrorMessage = "Kcal na 100 g musi być między 0 a 900.")] double? Kcal100,
     [Required, MinLength(1, ErrorMessage = "Podaj cenę w co najmniej jednym sklepie.")] IngredientPriceInput[] Prices);
+
+/// <summary>Cena wpisana przez użytkownika — od tej pory obowiązuje (dla wszystkich).</summary>
+public record UpdatePriceRequest(
+    [Required(ErrorMessage = "Wybierz sklep.")] string Store,
+    [Range(0.01, 10_000, ErrorMessage = "Cena musi być między 0,01 a 10 000 zł.")] decimal BasePrice);
 
 public record CustomListItem(
     [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy składnik.")] int IngredientId,

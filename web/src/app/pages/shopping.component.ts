@@ -5,7 +5,9 @@ import { ApiService } from '../core/api.service';
 import { apiErrorMessage, isNetworkError } from '../core/api-error';
 import { PlanStateService } from '../core/plan-state.service';
 import { readJson, writeJson } from '../core/storage';
-import { ShoppingList } from '../core/models';
+import { IngredientLine, ShoppingList, StoreName } from '../core/models';
+import { PriceLegendComponent } from '../shared/price-legend.component';
+import { PriceEditorComponent } from '../shared/price-editor.component';
 
 /** Ostatnio pobrana lista (jedna — dla bieżącego planu) do użycia offline w sklepie. */
 const CACHE_KEY = 'tanitydzien.shopping.v1';
@@ -18,7 +20,7 @@ interface CachedList {
 @Component({
   selector: 'app-shopping',
   standalone: true,
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, PriceLegendComponent, PriceEditorComponent],
   template: `
     <div class="container stack">
       <div class="row between">
@@ -52,8 +54,9 @@ interface CachedList {
             }
           </div>
           <div class="muted small" style="margin-top:8px">
-            Odhaczono {{ checkedCount() }} z {{ totalItems() }} · ceny szacunkowe (±10%)
+            Odhaczono {{ checkedCount() }} z {{ totalItems() }}
           </div>
+          <div style="margin-top:8px"><app-price-legend /></div>
         </div>
 
         @for (g of l.groups; track g.aisle) {
@@ -76,8 +79,17 @@ interface CachedList {
                       </div>
                     </div>
                   </div>
-                  <span class="mono-price" style="font-weight:700;white-space:nowrap">{{ it.cost | number:'1.2-2' }} zł</span>
+                  <span class="mono-price" style="font-weight:700;white-space:nowrap"
+                        [class.price-predicted]="it.source === 'predicted'"
+                        [class.price-user]="it.source === 'user'"
+                        [class.price-editable]="it.source !== 'verified'"
+                        (click)="editPrice(it, $event)">{{ it.cost | number:'1.2-2' }} zł</span>
                 </label>
+                @if (editing() === it.ingredientId) {
+                  <app-price-editor [ingredientId]="it.ingredientId" [ingredientName]="it.ingredient"
+                                    [initialStore]="currentStore()"
+                                    (saved)="onPriceSaved()" (cancelled)="editing.set(null)" />
+                }
               }
             </div>
           </div>
@@ -99,8 +111,14 @@ export class ShoppingComponent {
   error = signal<string | null>(null);
   offline = signal(false);
   checked = signal<Set<string>>(new Set());
+  /** Id składnika, którego cena jest właśnie edytowana. */
+  editing = signal<number | null>(null);
 
   constructor() {
+    this.load();
+  }
+
+  private load(): void {
     const ob = this.state.onboarding();
     const ids = this.state.recipeIds();
     if (!ob || ids.length === 0) {
@@ -108,6 +126,7 @@ export class ShoppingComponent {
       this.error.set('Brak jadłospisu — wróć i ułóż plan.');
       return;
     }
+    this.loading.set(true);
     const planKey = `${ob.store}:${ob.people}:${[...ids].sort((a, b) => a - b).join(',')}`;
     this.api.shoppingList({ recipeIds: ids, people: ob.people, store: ob.store }).subscribe({
       next: l => {
@@ -128,6 +147,24 @@ export class ShoppingComponent {
         }
       }
     });
+  }
+
+  currentStore(): StoreName {
+    return this.state.onboarding()?.store ?? 'Biedronka';
+  }
+
+  /** Klik w szarą/niebieską cenę otwiera edytor; gazetkowej (czarnej) nie edytujemy. */
+  editPrice(it: IngredientLine, ev: Event): void {
+    // cena leży w <label> checkboxa — bez preventDefault klik odhaczałby pozycję
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (it.source === 'verified') return;
+    this.editing.set(this.editing() === it.ingredientId ? null : it.ingredientId);
+  }
+
+  onPriceSaved(): void {
+    this.editing.set(null);
+    this.load();
   }
 
   isChecked(key: string): boolean { return this.checked().has(key); }

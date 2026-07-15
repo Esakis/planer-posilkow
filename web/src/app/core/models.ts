@@ -59,6 +59,9 @@ export interface MenuResponse {
   dishes: Dish[];
 }
 
+/** Źródło ceny: verified = gazetka (czarna), user = wpisana (niebieska), predicted = szacunek (szara). */
+export type PriceSource = 'predicted' | 'verified' | 'user';
+
 export interface IngredientLine {
   ingredient: string;
   product: string;
@@ -67,6 +70,8 @@ export interface IngredientLine {
   cost: number;
   onPromo: boolean;
   promoNote: string | null;
+  source: PriceSource;
+  ingredientId: number;
 }
 
 export interface AisleGroup {
@@ -97,6 +102,34 @@ export interface RecipeDetail {
   macroPerServing: MacroSummary;
   steps: string[];
   ingredients: RecipeIngredient[];
+  /** Dodany przez zalogowanego użytkownika — tylko takie można usuwać. */
+  mine: boolean;
+  favorite: boolean;
+  category: string;
+}
+
+/** Kategorie dań — spójne z RecipeCategories.All w API. */
+export const RECIPE_CATEGORIES: string[] = [
+  'Zupy', 'Drób', 'Wieprzowina', 'Wołowina', 'Ryby', 'Wegetariańskie',
+  'Makarony', 'Pierogi i mączne', 'Jednogarnkowe i zapiekanki', 'Sałatki'
+];
+
+/** Kartka przepisu w katalogu — koszt/makro w kontekście sklepu i liczby osób. */
+export interface RecipeCard {
+  recipeId: number;
+  name: string;
+  timeMin: number;
+  tags: string[];
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  cost: number;
+  hasPromo: boolean;
+  isCustom: boolean;
+  mine: boolean;
+  favorite: boolean;
+  category: string;
 }
 
 export interface StoreCost {
@@ -109,6 +142,8 @@ export interface StoreCost {
   promoItems: number;
   cheapest: boolean;
   diffToCheapest: number;
+  /** Suma pozycji porównywalnych (cena zweryfikowana/użytkownika w każdej sieci). */
+  verifiedTotal: number;
 }
 
 export interface CompareResponse {
@@ -116,6 +151,9 @@ export interface CompareResponse {
   stores: StoreCost[];
   cheapestStore: StoreName;
   maxSaving: number;
+  /** Czy różnicę policzono tylko ze zweryfikowanych pozycji (a nie z szacunków). */
+  verifiedComparison: boolean;
+  verifiedItems: number;
 }
 
 /** Składnik z bazy — do wyszukiwarki w formularzu przepisu i własnej liście. */
@@ -143,6 +181,7 @@ export interface CreateRecipeRequest {
   tags: string[];
   steps: string[];
   items: CreateRecipeItem[];
+  category?: string | null;
 }
 
 export interface CustomListItem {
@@ -154,6 +193,50 @@ export interface IngredientPriceInput {
   store: StoreName;
   basePrice: number;
   packSizeG: number;
+}
+
+/** Pozycja zapisanej listy zakupów. */
+export interface SavedListItem {
+  ingredientId: number;
+  name: string;
+  aisle: string;
+  grams: number;
+  checked: boolean;
+}
+
+/** Zapisana lista zakupów użytkownika (w bazie, powiązana z kontem). */
+export interface SavedList {
+  id: number;
+  name: string;
+  updatedAt: string;
+  items: SavedListItem[];
+}
+
+export interface SavedListItemInput {
+  ingredientId: number;
+  grams: number;
+  checked: boolean;
+}
+
+/** Konto użytkownika — plan wyliczany przez API (PlanService). */
+export interface Account {
+  email: string;
+  emailVerified: boolean;
+  plan: 'free' | 'trial' | 'premium' | 'expired';
+  active: boolean;
+  trialDaysLeft: number;
+  trialEndsAt: string | null;
+}
+
+export interface LoginResponse {
+  token: string;
+  account: Account;
+}
+
+export interface RegisterResponse {
+  message: string;
+  /** Link aktywacyjny zwracany tylko w dev (mail nie jest realnie wysyłany). */
+  devActivationLink: string | null;
 }
 
 /** Nowy produkt użytkownika — cena w co najmniej jednym sklepie. */

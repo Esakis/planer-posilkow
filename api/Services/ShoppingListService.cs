@@ -66,6 +66,10 @@ public class ShoppingListService
                 }
 
                 var product = ing.Products.FirstOrDefault(p => p.Store == store) ?? ing.Products.First();
+                // promocja z gazetki = cena zweryfikowana; poza promocją decyduje źródło ceny bazowej
+                var source = onPromo ? "verified"
+                    : product.BasePriceSource == PriceSource.User ? "user"
+                    : "predicted";
                 lines.Add(new IngredientLineDto(
                     ing.Name,
                     product.Name,
@@ -73,7 +77,9 @@ public class ShoppingListService
                     DisplayQty(ing, grams),
                     cost,
                     onPromo,
-                    onPromo && promo is not null ? PromoNote(promo) : null));
+                    onPromo && promo is not null ? PromoNote(promo) : null,
+                    source,
+                    ing.Id));
             }
 
             total += subtotal;

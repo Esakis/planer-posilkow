@@ -43,6 +43,18 @@ const STORE_EMOJI: Record<StoreName, string> = {
             </div>
           }
 
+          @if (d.verifiedComparison) {
+            <p class="muted small center">
+              ✅ Różnica policzona wyłącznie ze zweryfikowanych cen (gazetka / wpisane przez użytkowników)
+              — {{ d.verifiedItems }} pozycji wspólnych dla wszystkich sieci. Ceny przewidywane nie wpływają na różnicę.
+            </p>
+          } @else {
+            <p class="muted small center">
+              ⚠️ Różnica szacunkowa — żadna pozycja nie ma jeszcze zweryfikowanej ceny we wszystkich sieciach.
+              Popraw ceny na liście zakupów, aby porównanie było wiarygodne.
+            </p>
+          }
+
           @for (s of d.stores; track s.store; let i = $index) {
             <div class="card" [style.border-color]="s.cheapest ? 'var(--green)' : 'var(--line)'"
                  [style.border-width]="s.cheapest ? '2px' : '1px'">

@@ -137,12 +137,13 @@ label.field { display: block; margin-bottom: 18px; }
 label.field .lbl { display: block; font-weight: 700; margin-bottom: 8px; font-size: 14px; }
 label.field .hint { font-weight: 500; color: var(--muted); font-size: 13px; }
 
-input[type="number"], input[type="text"], textarea, select {
+input[type="number"], input[type="text"], input[type="email"], input[type="password"], textarea, select {
   width: 100%; padding: 12px 14px; font-size: 16px; /* 16px = brak auto-zoomu na iOS */
   border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink);
   font-family: inherit;
 }
-input[type="number"]:focus, input[type="text"]:focus, textarea:focus, select:focus {
+input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
+input[type="password"]:focus, textarea:focus, select:focus {
   outline: 2px solid var(--green-soft); border-color: var(--green);
 }
 textarea { resize: vertical; line-height: 1.5; }
@@ -172,6 +173,11 @@ textarea { resize: vertical; line-height: 1.5; }
 .center { text-align: center; }
 .mono-price { font-variant-numeric: tabular-nums; }
 
+/* ---- Źródła cen: czarna = gazetka, niebieska = użytkownik, szara = przewidywana ---- */
+.price-user { color: #1a5dbf; }
+.price-predicted { color: var(--muted); }
+.price-editable { cursor: pointer; text-decoration: underline dashed; text-underline-offset: 3px; }
+
 .notice {
   border-radius: 10px; padding: 12px 14px; font-size: 14px; font-weight: 600;
 }
@@ -188,7 +194,7 @@ textarea { resize: vertical; line-height: 1.5; }
 /* ---- Dolna nawigacja (telefon) ---- */
 .bottomnav {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-  display: none; grid-template-columns: repeat(4, 1fr);
+  display: none; grid-template-columns: repeat(5, 1fr);
   background: var(--card); border-top: 1px solid var(--line);
   padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
   box-shadow: 0 -2px 12px rgba(20, 40, 30, .06);

@@ -14,6 +14,9 @@ public class AppDbContext : DbContext
     public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Menu> Menus => Set<Menu>();
+    public DbSet<SavedList> SavedLists => Set<SavedList>();
+    public DbSet<SavedListItem> SavedListItems => Set<SavedListItem>();
+    public DbSet<FavoriteRecipe> FavoriteRecipes => Set<FavoriteRecipe>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -46,5 +49,27 @@ public class AppDbContext : DbContext
         b.Entity<Promotion>().Property(p => p.PromoPrice).HasPrecision(10, 2);
         b.Entity<Menu>().Property(m => m.EstimatedCost).HasPrecision(10, 2);
         b.Entity<User>().Property(u => u.WeeklyBudget).HasPrecision(10, 2);
+
+        b.Entity<User>().HasIndex(u => u.Email).IsUnique();
+        b.Entity<User>().HasIndex(u => u.ActivationToken);
+
+        b.Entity<FavoriteRecipe>().HasIndex(f => new { f.UserId, f.RecipeId }).IsUnique();
+        b.Entity<FavoriteRecipe>()
+            .HasOne(f => f.Recipe)
+            .WithMany()
+            .HasForeignKey(f => f.RecipeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<SavedList>().HasIndex(l => l.UserId);
+        b.Entity<SavedListItem>()
+            .HasOne(i => i.SavedList)
+            .WithMany(l => l.Items)
+            .HasForeignKey(i => i.SavedListId)
+            .OnDelete(DeleteBehavior.Cascade);
+        b.Entity<SavedListItem>()
+            .HasOne(i => i.Ingredient)
+            .WithMany()
+            .HasForeignKey(i => i.IngredientId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

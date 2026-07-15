@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaniTydzien.Api.Data;
 using TaniTydzien.Api.Dtos;
+using TaniTydzien.Api.Filters;
 using TaniTydzien.Api.Models;
 using TaniTydzien.Api.Services;
 
@@ -9,6 +11,8 @@ namespace TaniTydzien.Api.Controllers;
 
 [ApiController]
 [Route("api/menu")]
+[Authorize]
+[RequireActivePlan]
 public class MenuController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -149,30 +153,50 @@ public class MenuController : ControllerBase
 
     private CompareResponse BuildCompare(Func<Store, ShoppingListDto> buildList, int people)
     {
-        var stores = Enum.GetValues<Store>().Select(store =>
+        var lists = Enum.GetValues<Store>().ToDictionary(s => s, buildList);
+
+        // Różnicę między sklepami liczymy tylko z pozycji o pewnej cenie (gazetka/użytkownik)
+        // w KAŻDEJ sieci — szacunki nie mogą udawać realnych oszczędności. Gdy takich pozycji
+        // nie ma, spadamy do pełnych sum (różnica jawnie oznaczona jako szacunkowa).
+        var linesByStore = lists.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.Groups.SelectMany(g => g.Items).ToDictionary(i => i.IngredientId));
+        var comparableIds = linesByStore.Values.First().Keys
+            .Where(id => linesByStore.Values.All(d => d.TryGetValue(id, out var line) && line.Source != "predicted"))
+            .ToHashSet();
+        var verifiedComparison = comparableIds.Count > 0;
+
+        var stores = lists.Select(kv =>
         {
-            var list = buildList(store);
+            var list = kv.Value;
             var promoItems = list.Groups.Sum(g => g.Items.Count(i => i.OnPromo));
-            var (kind, note) = StoreInfo(store);
+            var verifiedTotal = Math.Round(list.Groups.SelectMany(g => g.Items)
+                .Where(i => comparableIds.Contains(i.IngredientId))
+                .Sum(i => i.Cost), 2);
+            var (kind, note) = StoreInfo(kv.Key);
             return new StoreCostDto(
-                store.ToString(), kind, note,
+                kv.Key.ToString(), kind, note,
                 list.Total, Math.Round(list.Total + list.PromoSavings, 2),
                 list.PromoSavings, promoItems,
-                Cheapest: false, DiffToCheapest: 0m);
+                Cheapest: false, DiffToCheapest: 0m,
+                VerifiedTotal: verifiedTotal);
         }).ToList();
 
-        var cheapest = stores.Min(s => s.Total);
-        var dearest = stores.Max(s => s.Total);
+        decimal Basis(StoreCostDto s) => verifiedComparison ? s.VerifiedTotal : s.Total;
+        var cheapest = stores.Min(Basis);
+        var dearest = stores.Max(Basis);
 
         var ranked = stores
-            .Select(s => s with { Cheapest = s.Total == cheapest, DiffToCheapest = Math.Round(s.Total - cheapest, 2) })
-            .OrderBy(s => s.Total)
+            .Select(s => s with { Cheapest = Basis(s) == cheapest, DiffToCheapest = Math.Round(Basis(s) - cheapest, 2) })
+            .OrderBy(Basis).ThenBy(s => s.Total)
             .ToArray();
 
         return new CompareResponse(
             people, ranked,
             ranked.First().Store,
-            Math.Round(dearest - cheapest, 2));
+            Math.Round(dearest - cheapest, 2),
+            verifiedComparison,
+            comparableIds.Count);
     }
 
     private static (string kind, string note) StoreInfo(Store store) => store switch

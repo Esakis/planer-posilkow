@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaniTydzien.Api.Data;
@@ -9,6 +11,7 @@ namespace TaniTydzien.Api.Controllers;
 
 [ApiController]
 [Route("api/recipes")]
+[Authorize]
 public class RecipesController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -20,37 +23,101 @@ public class RecipesController : ControllerBase
         _pricing = pricing;
     }
 
-    /// <summary>Lista przepisów (przeglądarka), z kosztem i makro dla podanego kontekstu.</summary>
+    /// <summary>Katalog przepisów (wspólny dla wszystkich), z kosztem/makro i serduszkami użytkownika.</summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DishDto>>> List(
+    public async Task<ActionResult<IEnumerable<RecipeCardDto>>> List(
         [FromQuery] string store = "Biedronka",
         [FromQuery] int people = 4)
     {
+        var userId = CurrentUserId();
         var s = Mapping.ParseStore(store);
         var recipes = await _db.Recipes
             .Include(r => r.Ingredients).ThenInclude(ri => ri.Ingredient).ThenInclude(i => i.Products).ThenInclude(p => p.Promotions)
             .OrderBy(r => r.Name)
             .ToListAsync();
 
-        var dishes = recipes.Select(r => Mapping.ToDish(r, 0, s, people, _pricing));
-        return Ok(dishes);
+        var favorites = await FavoriteIdsAsync(userId);
+
+        var cards = recipes.Select(r =>
+        {
+            var d = Mapping.ToDish(r, 0, s, people, _pricing);
+            return new RecipeCardDto(
+                r.Id, r.Name, r.TimeMin, d.Tags,
+                d.Kcal, d.Protein, d.Carbs, d.Fat, d.Cost, d.HasPromo,
+                r.IsCustom,
+                Mine: r.CreatedByUserId == userId,
+                Favorite: favorites.Contains(r.Id),
+                Category: r.Category);
+        });
+        return Ok(cards);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<RecipeDetailDto>> Detail(int id, [FromQuery] int people = 4)
     {
+        var userId = CurrentUserId();
         var recipe = await _db.Recipes
             .Include(r => r.Ingredients).ThenInclude(ri => ri.Ingredient)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (recipe is null) return NotFound();
-        return Ok(Mapping.ToDetail(recipe, people));
+
+        var favorite = userId is { } uid &&
+            await _db.FavoriteRecipes.AnyAsync(f => f.UserId == uid && f.RecipeId == id);
+
+        return Ok(Mapping.ToDetail(recipe, people) with
+        {
+            Mine = recipe.CreatedByUserId == userId,
+            Favorite = favorite
+        });
     }
 
-    /// <summary>Własny przepis użytkownika — ilości składników łączne, przeliczamy na porcję.</summary>
+    /// <summary>Id ulubionych przepisów zalogowanego użytkownika.</summary>
+    [HttpGet("favorites")]
+    public async Task<ActionResult<int[]>> Favorites() =>
+        Ok((await FavoriteIdsAsync(CurrentUserId())).ToArray());
+
+    /// <summary>Dodaje serduszko (idempotentne).</summary>
+    [HttpPost("{id:int}/favorite")]
+    public async Task<IActionResult> AddFavorite(int id)
+    {
+        if (CurrentUserId() is not { } userId)
+            return Unauthorized(new { message = "Sesja wygasła. Zaloguj się ponownie." });
+        if (!await _db.Recipes.AnyAsync(r => r.Id == id))
+            return NotFound(new { message = "Ten przepis nie istnieje." });
+
+        if (!await _db.FavoriteRecipes.AnyAsync(f => f.UserId == userId && f.RecipeId == id))
+        {
+            _db.FavoriteRecipes.Add(new FavoriteRecipe { UserId = userId, RecipeId = id });
+            await _db.SaveChangesAsync();
+        }
+        return NoContent();
+    }
+
+    /// <summary>Zdejmuje serduszko (idempotentne).</summary>
+    [HttpDelete("{id:int}/favorite")]
+    public async Task<IActionResult> RemoveFavorite(int id)
+    {
+        if (CurrentUserId() is not { } userId)
+            return Unauthorized(new { message = "Sesja wygasła. Zaloguj się ponownie." });
+
+        var fav = await _db.FavoriteRecipes.FirstOrDefaultAsync(f => f.UserId == userId && f.RecipeId == id);
+        if (fav is not null)
+        {
+            _db.FavoriteRecipes.Remove(fav);
+            await _db.SaveChangesAsync();
+        }
+        return NoContent();
+    }
+
+    /// <summary>Własny przepis użytkownika — ilości składników łączne, przeliczamy na porcję.
+    /// Przepis od razu trafia do wspólnego katalogu i puli generatora.</summary>
     [HttpPost]
     public async Task<ActionResult<CreateRecipeResponse>> Create([FromBody] CreateRecipeRequest req)
     {
+        if (CurrentUserId() is not { } userId)
+            return Unauthorized(new { message = "Sesja wygasła. Zaloguj się ponownie." });
+
         // duplikaty składników scalamy zamiast odrzucać
         var totals = req.Items
             .GroupBy(i => i.IngredientId)
@@ -89,7 +156,10 @@ public class RecipesController : ControllerBase
             Tags = string.Join(",", tags),
             Steps = string.Join("|", steps),
             BaseServings = req.Servings,
-            IsCustom = true
+            IsCustom = true,
+            CreatedByUserId = userId,
+            // nieznana/pusta kategoria spada do "Inne" — nie odrzucamy przepisu z tego powodu
+            Category = RecipeCategories.All.Contains(req.Category) ? req.Category! : "Inne"
         };
 
         double p = 0, c = 0, f = 0, k = 0;
@@ -117,13 +187,31 @@ public class RecipesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (CurrentUserId() is not { } userId)
+            return Unauthorized(new { message = "Sesja wygasła. Zaloguj się ponownie." });
+
         var recipe = await _db.Recipes.FirstOrDefaultAsync(r => r.Id == id);
         if (recipe is null) return NotFound();
-        if (!recipe.IsCustom)
-            return BadRequest(new { message = "Można usuwać tylko własne przepisy." });
+        if (!recipe.IsCustom || recipe.CreatedByUserId is null)
+            return BadRequest(new { message = "Przepisów z bazy TaniTydzień nie można usuwać." });
+        if (recipe.CreatedByUserId != userId)
+            return BadRequest(new { message = "Możesz usuwać tylko przepisy, które sam dodałeś." });
 
         _db.Recipes.Remove(recipe);
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    private async Task<HashSet<int>> FavoriteIdsAsync(int? userId)
+    {
+        if (userId is not { } uid) return new HashSet<int>();
+        var ids = await _db.FavoriteRecipes
+            .Where(f => f.UserId == uid)
+            .Select(f => f.RecipeId)
+            .ToListAsync();
+        return ids.ToHashSet();
+    }
+
+    private int? CurrentUserId() =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 }

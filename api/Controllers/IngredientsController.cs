@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaniTydzien.Api.Data;
@@ -26,6 +27,34 @@ public class IngredientsController : ControllerBase
             .Select(i => new IngredientDto(i.Id, i.Name, i.Unit, i.Aisle, i.Protein100, i.Carbs100, i.Fat100, i.Kcal100))
             .ToListAsync();
         return Ok(items);
+    }
+
+    /// <summary>Cena wpisana przez użytkownika (niebieska) — nadpisuje przewidywaną i obowiązuje wszystkich.</summary>
+    [Authorize]
+    [HttpPut("{id:int}/price")]
+    public async Task<IActionResult> UpdatePrice(int id, [FromBody] UpdatePriceRequest req)
+    {
+        if (!Enum.TryParse<Store>(req.Store, ignoreCase: true, out var store))
+            return BadRequest(new { message = $"Nieznany sklep: {req.Store}." });
+
+        var ing = await _db.Ingredients.Include(i => i.Products).FirstOrDefaultAsync(i => i.Id == id);
+        if (ing is null) return NotFound(new { message = "Ten produkt nie istnieje." });
+
+        var product = ing.Products.FirstOrDefault(p => p.Store == store);
+        if (product is null)
+        {
+            // sklep bez produktu — zakładamy go z gramaturą skopiowaną z innej sieci
+            var packG = ing.Products.FirstOrDefault()?.PackSizeG ?? 0;
+            if (packG <= 0)
+                return BadRequest(new { message = "Ten produkt nie ma żadnej ceny bazowej — dodaj go najpierw z ceną." });
+            product = new Product { Store = store, Name = ing.Name, PackSizeG = packG };
+            ing.Products.Add(product);
+        }
+
+        product.BasePrice = req.BasePrice;
+        product.BasePriceSource = PriceSource.User;
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     /// <summary>Nowy produkt użytkownika — cena w min. 1 sklepie; dla pozostałych działa fallback wyceny.</summary>

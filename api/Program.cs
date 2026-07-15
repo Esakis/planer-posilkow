@@ -1,5 +1,8 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using TaniTydzien.Api.Data;
 using TaniTydzien.Api.Services;
 
@@ -12,6 +15,31 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<MenuGenerator>();
 builder.Services.AddScoped<ShoppingListService>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddSingleton<IEmailSender, DevEmailSender>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
+    {
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                builder.Configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("Brak klucza Jwt:Key w konfiguracji."))),
+            ValidateLifetime = true
+        };
+    });
+builder.Services.AddAuthorization();
+
+// Stripe — klucz może być pusty (płatności zwrócą wtedy czytelny błąd konfiguracji)
+var stripeKey = builder.Configuration["Stripe:SecretKey"];
+if (!string.IsNullOrWhiteSpace(stripeKey))
+    Stripe.StripeConfiguration.ApiKey = stripeKey;
 
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(o =>
@@ -48,6 +76,8 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors(CorsPolicy);
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 

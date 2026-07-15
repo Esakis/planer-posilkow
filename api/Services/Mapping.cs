@@ -32,7 +32,8 @@ public static class Mapping
             r.Id, r.Name, r.TimeMin, TagList(r.Tags), people,
             new MacroSummary(r.Kcal, r.ProteinG, r.CarbsG, r.FatG),
             r.Steps.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-            ings);
+            ings,
+            Category: r.Category);
     }
 
     public static Store ParseStore(string? s) => s?.Trim().ToLowerInvariant() switch

@@ -3,7 +3,8 @@ import { Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
 import { apiErrorMessage } from '../core/api-error';
-import { Ingredient } from '../core/models';
+import { searchIngredients } from '../core/ingredient-search';
+import { Ingredient, RECIPE_CATEGORIES } from '../core/models';
 import { AddIngredientFormComponent } from '../shared/add-ingredient-form.component';
 
 /** Tagi do wyboru — spójne z wykluczeniami w onboardingu i tagami seedów. */
@@ -46,6 +47,15 @@ interface RecipeItemRow {
             <label for="servings" style="font-weight:700">Liczba porcji</label>
             <input id="servings" type="number" min="1" max="12" style="width:90px" [value]="servings()"
                    (input)="servings.set(+$any($event.target).value)" />
+          </div>
+        </div>
+
+        <div>
+          <div style="font-weight:700;margin-bottom:6px">Kategoria</div>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            @for (c of categoryOptions; track c) {
+              <span class="chip selectable" [class.on]="category() === c" (click)="category.set(c)">{{ c }}</span>
+            }
           </div>
         </div>
 
@@ -157,11 +167,13 @@ export class AddRecipeComponent {
   private router = inject(Router);
 
   readonly tagOptions = TAG_OPTIONS;
+  readonly categoryOptions = RECIPE_CATEGORIES;
 
   ingredients = signal<Ingredient[]>([]);
   loadError = signal<string | null>(null);
 
   name = signal('');
+  category = signal('Inne');
   timeMin = signal(30);
   servings = signal(4);
   tags = signal<Set<string>>(new Set());
@@ -176,12 +188,8 @@ export class AddRecipeComponent {
   error = signal<string | null>(null);
 
   matches = computed(() => {
-    const q = this.search().trim().toLowerCase();
-    if (!q) return [];
     const usedIds = new Set(this.items().map(r => r.ing.id));
-    return this.ingredients()
-      .filter(i => !usedIds.has(i.id) && i.name.toLowerCase().includes(q))
-      .slice(0, 8);
+    return searchIngredients(this.ingredients(), this.search(), usedIds);
   });
 
   macro = computed(() => {
@@ -272,7 +280,8 @@ export class AddRecipeComponent {
       servings: this.servings(),
       tags: [...this.tags()],
       steps: this.steps(),
-      items: this.items().map(r => ({ ingredientId: r.ing.id, grams: r.grams }))
+      items: this.items().map(r => ({ ingredientId: r.ing.id, grams: r.grams })),
+      category: this.category()
     }).subscribe({
       next: res => this.router.navigate(['/recipe', res.id]),
       error: err => {

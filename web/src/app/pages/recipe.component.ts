@@ -21,8 +21,16 @@ import { RecipeDetail } from '../core/models';
         @if (recipe(); as r) {
 
         <div class="stack">
-          <h1 style="font-size:24px">{{ r.name }}</h1>
+          <div class="row between" style="align-items:flex-start;gap:10px">
+            <h1 style="font-size:24px;flex:1">{{ r.name }}</h1>
+            <button class="heart" [class.on]="r.favorite"
+                    [attr.aria-label]="r.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'"
+                    (click)="toggleFav(r)">
+              {{ r.favorite ? '❤️' : '🤍' }}
+            </button>
+          </div>
           <div class="row wrap" style="gap:6px">
+            <span class="chip">{{ r.category }}</span>
             <span class="chip">⏱ {{ r.timeMin }} min</span>
             <span class="chip">🍽 {{ r.servings }} porcji</span>
             @for (t of r.tags; track t) { <span class="tag">{{ t }}</span> }
@@ -62,7 +70,7 @@ import { RecipeDetail } from '../core/models';
           </ol>
         </div>
 
-        @if (isCustom(r)) {
+        @if (r.mine) {
           @if (deleteError()) {
             <div class="notice error">{{ deleteError() }}</div>
           }
@@ -80,6 +88,11 @@ import { RecipeDetail } from '../core/models';
     ol.steps li { padding: 8px 0; line-height: 1.55; }
     .cooking ol.steps li { font-size: 20px; padding: 14px 0; }
     .cooking h1 { font-size: 28px; }
+    .heart {
+      background: none; border: none; font-size: 26px; line-height: 1;
+      padding: 2px 4px; border-radius: 8px; transition: transform .1s;
+    }
+    .heart:hover { transform: scale(1.15); }
   `]
 })
 export class RecipeComponent {
@@ -158,8 +171,15 @@ export class RecipeComponent {
 
   back(): void { this.location.back(); }
 
-  // własne przepisy rozpoznajemy po tagu nadawanym przez API przy tworzeniu
-  isCustom(r: RecipeDetail): boolean { return r.tags.includes('własny'); }
+  /** Optymistyczna zmiana serduszka — przy błędzie API cofamy. */
+  toggleFav(r: RecipeDetail): void {
+    const next = !r.favorite;
+    this.recipe.set({ ...r, favorite: next });
+    const call = next ? this.api.addFavorite(r.id) : this.api.removeFavorite(r.id);
+    call.subscribe({
+      error: () => this.recipe.update(cur => cur ? { ...cur, favorite: !next } : cur)
+    });
+  }
 
   remove(id: number): void {
     if (this.deleting()) return;

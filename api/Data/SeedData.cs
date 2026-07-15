@@ -7,7 +7,7 @@ namespace TaniTydzien.Api.Data;
 /// promocje z „gazetki"). W produkcji przepisy powstają offline (LLM + redakcja),
 /// tutaj mamy reprezentatywny wycinek ~50 obiadów pod polski budżet.
 /// </summary>
-public static class SeedData
+public static partial class SeedData
 {
     // Definicja składnika: makro na 100 g, dział sklepu, cena/gramatura opakowania w obu sieciach.
     private record IngDef(
@@ -17,10 +17,66 @@ public static class SeedData
 
     private record RecDef(
         string Name, int TimeMin, string Tags, string Steps,
-        (string ing, double g)[] Items);
+        (string ing, double g)[] Items, string Category = "Inne");
 
     // Promocja tygodnia: składnik + sieć + cena + warunek.
     private record PromoDef(string Ing, Store Store, decimal Price, string? Condition);
+
+    /// <summary>Kategorie dla pierwotnych 51 przepisów (dodane po fakcie — nowe niosą kategorię same).</summary>
+    private static readonly Dictionary<string, string> LegacyCategories = new()
+    {
+        ["Kurczak w sosie curry z ryżem"] = "Drób",
+        ["Spaghetti bolognese"] = "Makarony",
+        ["Naleśniki z serem"] = "Pierogi i mączne",
+        ["Placki ziemniaczane"] = "Pierogi i mączne",
+        ["Zupa pomidorowa z ryżem"] = "Zupy",
+        ["Gulasz wieprzowy z kaszą"] = "Wieprzowina",
+        ["Kotlety mielone z ziemniakami"] = "Wieprzowina",
+        ["Ryż z warzywami (stir-fry)"] = "Wegetariańskie",
+        ["Leczo z kiełbasą"] = "Wieprzowina",
+        ["Makaron z tuńczykiem"] = "Makarony",
+        ["Pierogi ruskie"] = "Pierogi i mączne",
+        ["Fasolka po bretońsku"] = "Jednogarnkowe i zapiekanki",
+        ["Zupa ogórkowa"] = "Zupy",
+        ["Kasza gryczana z pieczarkami"] = "Wegetariańskie",
+        ["Chili con carne"] = "Wołowina",
+        ["Racuchy z jabłkami"] = "Pierogi i mączne",
+        ["Zapiekanka makaronowa z kurczakiem"] = "Jednogarnkowe i zapiekanki",
+        ["Kurczak pieczony z ziemniakami"] = "Drób",
+        ["Udka pieczone z ziemniakami i surówką"] = "Drób",
+        ["Kurczak w sosie pomidorowym z kaszą"] = "Drób",
+        ["Kurczak stir-fry z sosem sojowym"] = "Drób",
+        ["Ryż z kurczakiem i groszkiem"] = "Drób",
+        ["Penne z kurczakiem i brokułem"] = "Makarony",
+        ["Pulpety drobiowe w sosie koperkowym"] = "Drób",
+        ["Wątróbka smażona z cebulą"] = "Drób",
+        ["Schab smażony z kapustą zasmażaną"] = "Wieprzowina",
+        ["Bigos z kiełbasą"] = "Jednogarnkowe i zapiekanki",
+        ["Łazanki z kapustą i kiełbasą"] = "Makarony",
+        ["Gołąbki bez zawijania"] = "Jednogarnkowe i zapiekanki",
+        ["Zapiekanka ziemniaczana z mięsem"] = "Jednogarnkowe i zapiekanki",
+        ["Filet z mintaja z ziemniakami"] = "Ryby",
+        ["Ryba w sosie pomidorowym z ryżem"] = "Ryby",
+        ["Sałatka z tuńczykiem, ryżem i kukurydzą"] = "Sałatki",
+        ["Zupa jarzynowa"] = "Zupy",
+        ["Krupnik z kaszą jęczmienną"] = "Zupy",
+        ["Krem z brokułów"] = "Zupy",
+        ["Zupa z soczewicy"] = "Zupy",
+        ["Dhal z soczewicy z ryżem"] = "Wegetariańskie",
+        ["Curry z ciecierzycy ze szpinakiem"] = "Wegetariańskie",
+        ["Kotleciki z ciecierzycy"] = "Wegetariańskie",
+        ["Gulasz warzywny z soczewicą i kaszą"] = "Wegetariańskie",
+        ["Leczo wegetariańskie z cukinią"] = "Wegetariańskie",
+        ["Penne z cukinią i mozzarellą"] = "Makarony",
+        ["Makaron ze szpinakiem i twarogiem"] = "Makarony",
+        ["Risotto z pieczarkami"] = "Wegetariańskie",
+        ["Placki z cukinii"] = "Pierogi i mączne",
+        ["Omlet z warzywami i serem"] = "Wegetariańskie",
+        ["Frittata z ziemniakami i szpinakiem"] = "Wegetariańskie",
+        ["Naleśniki ze szpinakiem i serem"] = "Pierogi i mączne",
+        ["Racuchy owsiane z bananem"] = "Pierogi i mączne",
+        ["Kalafior zapiekany z serem i ziemniakami"] = "Jednogarnkowe i zapiekanki",
+    };
 
     public static void Seed(AppDbContext db)
     {
@@ -90,6 +146,7 @@ public static class SeedData
             new("Masło",                               "Tłuszcze",  0.7,  0.7,  82,   740,  7.99m,  7.49m,  6.99m, 200),
             new("Sos sojowy",                          "Przyprawy", 8,    8,    0,    60,   5.99m,  5.49m,  4.99m, 150),
         };
+        week.AddRange(ExtraIngredients());
 
         var ingByName = new Dictionary<string, Ingredient>();
         foreach (var d in week)
@@ -136,6 +193,7 @@ public static class SeedData
             new("Kapusta kiszona",                Store.Auchan,    4.99m,  null),
             new("Schab wieprzowy",                Store.Auchan,    13.99m, null),
         };
+        promos.AddRange(ExtraPromos());
         foreach (var p in promos)
         {
             var product = ingByName[p.Ing].Products.First(x => x.Store == p.Store);
@@ -161,8 +219,8 @@ public static class SeedData
                 new[]{("Mąka pszenna",60.0),("Mleko",120),("Jajka",30),("Twaróg półtłusty",100),("Cukier",15),("Olej rzepakowy",8)}),
 
             new("Placki ziemniaczane", 40, "wege",
-                "1. Ziemniaki i cebulę zetrzyj na tarce, odciśnij.|2. Dodaj jajko i mąkę, wymieszaj.|3. Smaż placki na rozgrzanym oleju z obu stron.",
-                new[]{("Ziemniaki",300.0),("Mąka pszenna",25),("Jajka",25),("Cebula",20),("Olej rzepakowy",20)}),
+                "1. Ziemniaki i cebulę zetrzyj na tarce, odciśnij.|2. Dodaj jajko i mąkę, wymieszaj.|3. Smaż placki na rozgrzanym oleju, podawaj ze śmietaną.",
+                new[]{("Ziemniaki",300.0),("Mąka pszenna",25),("Jajka",25),("Cebula",20),("Olej rzepakowy",20),("Śmietana 18%",25)}),
 
             new("Zupa pomidorowa z ryżem", 30, "wege",
                 "1. Podsmaż cebulę i marchew.|2. Wlej pomidory, koncentrat i wodę z bulionem, gotuj 15 min.|3. Zaciągnij śmietaną.|4. Podawaj z ugotowanym ryżem.",
@@ -193,8 +251,8 @@ public static class SeedData
                 new[]{("Mąka pszenna",100.0),("Ziemniaki",120),("Twaróg półtłusty",60),("Cebula",30),("Olej rzepakowy",8)}),
 
             new("Fasolka po bretońsku", 35, "mięso,wieprzowina",
-                "1. Kiełbasę i cebulę podsmaż.|2. Dodaj fasolę z zalewą, pomidory i koncentrat.|3. Dopraw papryką, duś 15 min.",
-                new[]{("Fasola biała (puszka)",200.0),("Kiełbasa śląska",60),("Pomidory krojone (puszka)",80),("Cebula",40),("Koncentrat pomidorowy",15),("Olej rzepakowy",6),("Papryka słodka mielona",2)}),
+                "1. Kiełbasę i cebulę podsmaż.|2. Dodaj fasolę z zalewą, pomidory i koncentrat.|3. Dopraw papryką i majerankiem, duś 15 min.",
+                new[]{("Fasola biała (puszka)",200.0),("Kiełbasa śląska",60),("Pomidory krojone (puszka)",80),("Cebula",40),("Koncentrat pomidorowy",15),("Olej rzepakowy",6),("Papryka słodka mielona",2),("Majeranek",1)}),
 
             new("Zupa ogórkowa", 40, "wege",
                 "1. Ziemniaki i marchew ugotuj w wodzie z bulionem.|2. Dodaj starte ogórki kiszone, gotuj 10 min.|3. Zaciągnij śmietaną.",
@@ -209,8 +267,8 @@ public static class SeedData
                 new[]{("Mięso mielone wieprzowo-wołowe",100.0),("Fasola czerwona (puszka)",120),("Pomidory krojone (puszka)",120),("Papryka czerwona",50),("Cebula",40),("Koncentrat pomidorowy",10),("Olej rzepakowy",8)}),
 
             new("Racuchy z jabłkami", 25, "wege,lubiane-przez-dzieci",
-                "1. Wymieszaj mąkę, mleko, jajko i cukier.|2. Dodaj starte jabłka.|3. Smaż małe placki na oleju.",
-                new[]{("Mąka pszenna",70.0),("Mleko",100),("Jajka",25),("Jabłka",80),("Cukier",20),("Olej rzepakowy",10)}),
+                "1. Wymieszaj mąkę, mleko, jajko, cukier i cynamon.|2. Dodaj starte jabłka.|3. Smaż małe placki na oleju.",
+                new[]{("Mąka pszenna",70.0),("Mleko",100),("Jajka",25),("Jabłka",80),("Cukier",20),("Olej rzepakowy",10),("Cynamon",1)}),
 
             new("Zapiekanka makaronowa z kurczakiem", 45, "mięso,drob",
                 "1. Makaron ugotuj.|2. Kurczaka i cebulę podsmaż, dodaj pomidory i śmietanę.|3. Wymieszaj z makaronem, przełóż do naczynia, posyp serem.|4. Zapiekaj 20 min w 200°C.",
@@ -352,12 +410,19 @@ public static class SeedData
                 "1. Kalafiora i ziemniaki ugotuj na półtwardo.|2. Przełóż do naczynia, zalej śmietaną z czosnkiem.|3. Posyp serem i zapiekaj 20 min w 200°C.",
                 new[]{("Kalafior",200.0),("Ziemniaki",200),("Śmietana 18%",40),("Ser żółty gouda",35),("Czosnek",4),("Masło",8)}),
         };
+        recipes.AddRange(ExtraRecipes2());
+        recipes.AddRange(ExtraRecipes3());
 
         foreach (var r in recipes)
         {
+            // nowe przepisy niosą własną kategorię; starym (Category == "Inne") nadaje ją słownik
+            var category = r.Category != "Inne"
+                ? r.Category
+                : LegacyCategories.GetValueOrDefault(r.Name, "Inne");
             var recipe = new Recipe
             {
-                Name = r.Name, TimeMin = r.TimeMin, Tags = r.Tags, Steps = r.Steps, BaseServings = 4
+                Name = r.Name, TimeMin = r.TimeMin, Tags = r.Tags, Steps = r.Steps,
+                BaseServings = 4, Category = category
             };
             double p = 0, c = 0, f = 0, k = 0;
             foreach (var (ingName, grams) in r.Items)
